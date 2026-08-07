@@ -9,10 +9,6 @@ const supabaseSessionKey = "tts-supabase-session";
 const clerkSignedInKey = "tts-clerk-signed-in";
 
 let clerkInstancePromise = null;
-const clerkScriptSources = [
-  "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js",
-  "https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js",
-];
 
 function currentSupabaseSession() {
   try {
@@ -64,25 +60,42 @@ async function supabaseAuthRequest(path, body) {
 
 async function loadClerkScript() {
   if (window.Clerk) return window.Clerk;
-  let lastError = null;
-  for (const source of clerkScriptSources) {
-    try {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = source;
-        script.async = true;
-        script.crossOrigin = "anonymous";
-        script.dataset.ttsClerk = "true";
-        script.addEventListener("load", resolve, { once: true });
-        script.addEventListener("error", reject, { once: true });
-        document.head.append(script);
-      });
-      if (window.Clerk) return window.Clerk;
-    } catch (error) {
-      lastError = error;
-    }
+  const clerkDomain = clerkPublishableKey ? atob(clerkPublishableKey.split("_")[2] || "").slice(0, -1) : "";
+  if (!clerkDomain) {
+    throw new Error("Missing Clerk publishable key domain.");
   }
-  throw lastError || new Error("Clerk failed to load.");
+  await loadBrowserScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`, "tts-clerk-ui");
+  await loadBrowserScript(`https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, "tts-clerk", {
+    "data-clerk-publishable-key": clerkPublishableKey,
+  });
+  if (!window.Clerk) throw new Error("Clerk failed to load.");
+  return window.Clerk;
+}
+
+async function loadBrowserScript(source, marker, attributes = {}) {
+  const existing = document.querySelector(`script[data-${marker}]`);
+  if (existing) {
+    await new Promise((resolve, reject) => {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      if (existing.dataset.loaded === "true") resolve();
+    });
+    return;
+  }
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = source;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset[marker.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = "true";
+    Object.entries(attributes).forEach(([name, value]) => script.setAttribute(name, value));
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", reject, { once: true });
+    document.head.append(script);
+  });
 }
 
 async function clerk() {
@@ -95,7 +108,10 @@ async function clerk() {
       if (typeof load !== "function") {
         throw new Error("Clerk loaded without a load() API.");
       }
-      await load.call(instance, { publishableKey: clerkPublishableKey });
+      await load.call(instance, {
+        publishableKey: clerkPublishableKey,
+        ui: { ClerkUI: window.__internal_ClerkUICtor },
+      });
       instance = window.Clerk || instance;
       localStorage.setItem(clerkSignedInKey, instance?.user ? "true" : "");
       return instance;
