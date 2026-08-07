@@ -9,6 +9,10 @@ const supabaseSessionKey = "tts-supabase-session";
 const clerkSignedInKey = "tts-clerk-signed-in";
 
 let clerkInstancePromise = null;
+const clerkScriptSources = [
+  "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js",
+  "https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js",
+];
 
 function currentSupabaseSession() {
   try {
@@ -60,23 +64,25 @@ async function supabaseAuthRequest(path, body) {
 
 async function loadClerkScript() {
   if (window.Clerk) return window.Clerk;
-  await new Promise((resolve, reject) => {
-    const existing = document.querySelector("script[data-tts-clerk]");
-    if (existing) {
-      existing.addEventListener("load", resolve, { once: true });
-      existing.addEventListener("error", reject, { once: true });
-      return;
+  let lastError = null;
+  for (const source of clerkScriptSources) {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = source;
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.dataset.ttsClerk = "true";
+        script.addEventListener("load", resolve, { once: true });
+        script.addEventListener("error", reject, { once: true });
+        document.head.append(script);
+      });
+      if (window.Clerk) return window.Clerk;
+    } catch (error) {
+      lastError = error;
     }
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js";
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.dataset.ttsClerk = "true";
-    script.addEventListener("load", resolve, { once: true });
-    script.addEventListener("error", reject, { once: true });
-    document.head.append(script);
-  });
-  return window.Clerk;
+  }
+  throw lastError || new Error("Clerk failed to load.");
 }
 
 async function clerk() {
@@ -84,15 +90,38 @@ async function clerk() {
   if (!clerkInstancePromise) {
     clerkInstancePromise = (async () => {
       const ClerkGlobal = await loadClerkScript();
-      const instance = typeof ClerkGlobal === "function" ? new ClerkGlobal(clerkPublishableKey) : ClerkGlobal;
-      if (typeof instance.load === "function") {
-        await instance.load({ publishableKey: clerkPublishableKey });
+      let instance = typeof ClerkGlobal === "function" ? new ClerkGlobal(clerkPublishableKey) : ClerkGlobal;
+      const load = instance?.load || window.Clerk?.load;
+      if (typeof load !== "function") {
+        throw new Error("Clerk loaded without a load() API.");
       }
-      localStorage.setItem(clerkSignedInKey, instance.user ? "true" : "");
+      await load.call(instance, { publishableKey: clerkPublishableKey });
+      instance = window.Clerk || instance;
+      localStorage.setItem(clerkSignedInKey, instance?.user ? "true" : "");
       return instance;
     })();
   }
   return clerkInstancePromise;
+}
+
+async function clerkRedirectToSignIn() {
+  const instance = await clerk();
+  if (!instance) throw new Error("Clerk is not configured.");
+  const redirectUrl = new URL("./index.html", window.location.href).href;
+  const signInOptions = {
+    redirectUrl,
+    afterSignInUrl: redirectUrl,
+    afterSignUpUrl: redirectUrl,
+  };
+  if (typeof instance.redirectToSignIn === "function") {
+    await instance.redirectToSignIn(signInOptions);
+    return;
+  }
+  if (typeof instance.openSignIn === "function") {
+    await instance.openSignIn(signInOptions);
+    return;
+  }
+  throw new Error("Clerk sign-in is unavailable.");
 }
 
 async function clerkToken() {
@@ -122,8 +151,7 @@ async function api(path, options = {}) {
 
 async function signIn(email, password) {
   if (backendEnabled) {
-    const instance = await clerk();
-    await instance?.openSignIn?.({ redirectUrl: "./index.html" });
+    await clerkRedirectToSignIn();
     return null;
   }
   const session = await supabaseAuthRequest("token?grant_type=password", { email, password });

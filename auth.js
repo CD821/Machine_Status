@@ -28,7 +28,9 @@ form?.addEventListener("submit", async (event) => {
   message.textContent = "Signing in...";
   try {
     await remoteStore.signIn(String(data.get("email") || ""), String(data.get("password") || ""));
-    location.href = "./index.html";
+    if (remoteStore.provider !== "clerk") {
+      location.href = "./index.html";
+    }
   } catch (error) {
     message.textContent = "Sign in failed. Check authentication settings.";
   }
