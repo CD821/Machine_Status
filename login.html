@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In | TTS Maintenance</title>
+    <meta name="description" content="Sign in to TTS Maintenance." />
+    <link rel="stylesheet" href="./styles.css?v=20260807-asset-image-upload" />
+  </head>
+  <body data-page="login">
+    <main class="login-page">
+      <section class="panel login-card">
+        <h1>TTS Maintenance</h1>
+        <form class="login-form" id="loginForm">
+          <label><span>Email</span><input name="email" type="email" required autocomplete="email" /></label>
+          <label><span>Password</span><input name="password" type="password" required autocomplete="current-password" /></label>
+          <button class="primary-action" type="submit">Sign In</button>
+        </form>
+        <p class="subtle" id="loginMessage"></p>
+      </section>
+    </main>
+    <script src="./config.js"></script>
+    <script type="module" src="./auth.js?v=20260807-vercel-neon-clerk"></script>
+  </body>
+</html>

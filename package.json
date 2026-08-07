@@ -1,0 +1,19 @@
+{
+  "name": "tts-equipment-maintenance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "node tools/write-runtime-config.mjs && node tools/check-static-site.mjs",
+    "seed:sql": "node tools/export-supabase-seed.mjs",
+    "seed:neon": "node tools/export-supabase-seed.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "jose": "^6.0.12"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

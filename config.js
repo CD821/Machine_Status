@@ -1,0 +1,6 @@
+window.TTS_CONFIG = {
+  "SUPABASE_URL": "",
+  "SUPABASE_ANON_KEY": "",
+  "BACKEND_API_URL": "",
+  "CLERK_PUBLISHABLE_KEY": ""
+};

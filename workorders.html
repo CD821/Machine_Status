@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Orders | TTS Maintenance</title>
+    <meta name="description" content="Equipment repair work order queue." />
+    <link rel="stylesheet" href="./styles.css?v=20260807-asset-image-upload" />
+  </head>
+  <body data-page="workorders">
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <nav class="nav-list">
+          <a class="nav-item" href="./index.html"><span class="icon">◴</span><span>Live Status</span></a>
+          <a class="nav-item active" data-viewer-hidden href="./workorders.html"><span class="icon">▤</span><span>Work Orders</span></a>
+          <a class="nav-item" data-viewer-hidden href="./schedule.html"><span class="icon">▣</span><span>PM Schedules</span></a>
+          <a class="nav-item" data-viewer-hidden href="./machines.html"><span class="icon">▧</span><span>Assets</span></a>
+          <a class="nav-item" data-viewer-hidden href="./logs.html"><span class="icon">≡</span><span>Reports</span></a>
+          <a class="nav-item" data-viewer-hidden href="./settings.html"><span class="icon">*</span><span>Settings</span></a>
+        </nav>
+        <div class="sidebar-card">
+          <span>Open Work Orders</span>
+          <strong id="sidebarWorkOrders">0</strong>
+          <div class="mini-legend">
+            <span><i class="dot urgent"></i>Urgent <b id="urgentCount">0</b></span>
+            <span><i class="dot high"></i>High <b id="highCount">0</b></span>
+            <span><i class="dot medium"></i>Medium <b id="mediumCount">0</b></span>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <button class="hamburger" type="button" aria-label="Toggle menu">☰</button>
+          <label class="search"><span>Search</span><input id="searchInput" type="search" placeholder="Search work orders..." /></label>
+          <div class="topbar-actions"><span class="user-dot">U</span><span class="shop-user">Shop User</span></div>
+        </header>
+        <div class="page-heading">
+          <h1>Work Orders</h1>
+          <button class="primary-action" id="createWorkOrder" data-permission="manageWorkOrders" type="button">Create Work Order</button>
+        </div>
+        <div class="modal-backdrop" id="workOrderFormPanel" hidden>
+          <section class="panel work-order-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="workOrderFormTitle">
+            <div class="panel-title">
+              <h2 id="workOrderFormTitle">Create Work Order</h2>
+              <button class="icon-button" id="cancelWorkOrder" type="button" aria-label="Close work order form">x</button>
+            </div>
+            <form class="work-order-form" id="workOrderForm">
+              <input name="id" type="hidden" />
+              <label class="compact-field"><span>Machine</span><select name="machineId" id="workOrderMachine"></select></label>
+              <label><span>Priority</span><select name="priority"><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+              <label><span>Status</span><select name="status" id="workOrderStatus"><option value="open">Open</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option></select></label>
+              <label><span>Schedule Date</span><input name="opened" type="date" /></label>
+              <label><span>Assign Technician</span><select name="technician" id="workOrderTechnician"></select></label>
+              <label class="wide"><span>Issue</span><input name="issue" type="text" required placeholder="Describe the repair or maintenance issue" /></label>
+              <label class="wide"><span>Parts Needed</span><input name="partsNeeded" type="text" placeholder="Pendant switch, seal kit, belt guide" /></label>
+              <div class="form-actions wide">
+                <button class="primary-action" data-permission="manageWorkOrders" type="submit">Save Work Order</button>
+                <button class="outline-button" data-cancel-work-order type="button">Cancel</button>
+              </div>
+            </form>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="tabs" role="tablist">
+            <button class="active" data-order-filter="all" type="button">All</button>
+            <button data-order-filter="open" type="button">Open</button>
+            <button data-order-filter="scheduled" type="button">Scheduled</button>
+            <button data-order-filter="completed" type="button">Completed</button>
+          </div>
+          <div class="table-wrap"><table id="workOrdersTable"></table></div>
+        </section>
+      </main>
+    </div>
+    <script src="./config.js"></script>
+    <script type="module" src="./app.js?v=20260807-vercel-neon-clerk"></script>
+  </body>
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Machine Detail | TTS Maintenance</title>
+    <meta name="description" content="Machine detail, maintenance history, and log entry form." />
+    <link rel="stylesheet" href="./styles.css?v=20260807-asset-image-upload" />
+  </head>
+  <body data-page="machines">
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <nav class="nav-list">
+          <a class="nav-item" href="./index.html"><span class="icon">◴</span><span>Live Status</span></a>
+          <a class="nav-item" data-viewer-hidden href="./workorders.html"><span class="icon">▤</span><span>Work Orders</span></a>
+          <a class="nav-item" data-viewer-hidden href="./schedule.html"><span class="icon">▣</span><span>PM Schedules</span></a>
+          <a class="nav-item active" data-viewer-hidden href="./machines.html"><span class="icon">▧</span><span>Assets</span></a>
+          <a class="nav-item" data-viewer-hidden href="./logs.html"><span class="icon">≡</span><span>Reports</span></a>
+          <a class="nav-item" data-viewer-hidden href="./settings.html"><span class="icon">*</span><span>Settings</span></a>
+        </nav>
+        <div class="sidebar-card">
+          <span>Open Work Orders</span>
+          <strong id="sidebarWorkOrders">0</strong>
+          <div class="mini-legend">
+            <span><i class="dot urgent"></i>Urgent <b id="urgentCount">0</b></span>
+            <span><i class="dot high"></i>High <b id="highCount">0</b></span>
+            <span><i class="dot medium"></i>Medium <b id="mediumCount">0</b></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button class="hamburger" type="button" aria-label="Toggle menu">☰</button>
+          <a class="back-link" href="./index.html">← Back to Machines</a>
+          <div class="topbar-actions">
+            <button class="primary-action" id="addMaintenanceLog" data-permission="addLogs" type="button">Add Maintenance Log</button>
+            <button class="primary-action" id="addAsset" data-permission="manageAssets" type="button">Add Asset</button>
+            <span class="user-dot">U</span>
+            <span class="shop-user">Shop User</span>
+          </div>
+        </header>
+
+        <div class="modal-backdrop" id="assetFormPanel" hidden>
+          <section class="panel asset-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="assetFormTitle">
+            <div class="panel-title">
+              <h2 id="assetFormTitle">Add Asset</h2>
+              <button class="icon-button" id="cancelAsset" type="button" aria-label="Close asset form">x</button>
+            </div>
+            <form class="asset-form" id="assetForm">
+              <input name="id" type="hidden" />
+              <label><span>Asset Name</span><input name="name" type="text" required placeholder="Saber Jet 3" /></label>
+              <label><span>Category</span><input name="category" type="text" placeholder="Production" /></label>
+              <label><span>Location</span><input name="location" type="text" placeholder="Shop Floor - Bay 3" /></label>
+              <label><span>Model</span><input name="model" type="text" placeholder="Model name" /></label>
+              <label><span>Serial Number</span><input name="serialNumber" type="text" placeholder="TTS-014" /></label>
+              <label><span>Status</span><select name="status" id="assetStatus"></select></label>
+              <label><span>OEE %</span><input name="oee" type="number" min="0" max="100" /></label>
+              <div class="asset-image-field wide">
+                <span>Asset Picture</span>
+                <input name="imageUrl" type="hidden" />
+                <input id="assetImageFile" type="file" accept="image/*" hidden />
+                <div class="asset-drop-zone" id="assetDropZone" role="button" tabindex="0" aria-label="Choose or drop an asset picture">
+                  <div class="asset-image-preview" id="assetImagePreview">IMG</div>
+                  <div>
+                    <strong>Drop image here</strong>
+                    <p>or choose a file from your computer.</p>
+                    <button class="outline-button" id="chooseAssetImage" type="button">Choose Image</button>
+                  </div>
+                </div>
+                <button class="text-button asset-image-remove" id="removeAssetImage" type="button">Remove picture</button>
+              </div>
+              <label class="wide"><span>Latest Note</span><textarea name="latestNote" rows="3" placeholder="Asset added."></textarea></label>
+              <div class="form-actions wide">
+                <button class="primary-action" type="submit">Save Asset</button>
+                <button class="outline-button" data-cancel-asset type="button">Cancel</button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div class="modal-backdrop" id="logFormPanel" hidden>
+          <section class="panel log-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="logFormTitle">
+            <div class="panel-title">
+              <h2 id="logFormTitle">Add Maintenance Log</h2>
+              <span class="save-state" id="saveState">Ready</span>
+              <button class="icon-button" id="cancelLog" type="button" aria-label="Close maintenance log form">x</button>
+            </div>
+            <form id="logForm" class="log-form">
+              <label class="wide"><span>Machine</span><select name="machineId" id="formMachine"></select></label>
+              <label class="wide">
+                <span>Status</span>
+                <select name="status" id="logStatus">
+                  <option value="operational">Operational</option>
+                  <option value="maintenance">PM / Service</option>
+                  <option value="down">Down</option>
+                  <option value="urgent">Urgent Repair</option>
+                </select>
+              </label>
+              <label class="wide"><span>Issue Type</span><select name="issueType" id="issueType"></select></label>
+              <label class="wide"><span>Technician</span><select name="technician" id="technician"></select></label>
+              <label class="wide time-field"><span>Down Time</span><input name="downAt" type="datetime-local" /></label>
+              <label class="wide time-field"><span>Up Time</span><input name="upAt" type="datetime-local" /></label>
+              <label class="wide"><span>Notes</span><textarea name="notes" rows="5" placeholder="High pressure pump repaired. Replaced seal and O-ring. Tested system - no leaks detected."></textarea></label>
+              <div class="photo-row wide">
+                <button class="photo-box" type="button">＋ Add photos</button>
+              </div>
+              <div class="form-actions wide">
+                <button class="danger-action" name="eventAction" value="down" data-permission="addLogs" type="submit">Mark Down</button>
+                <button class="primary-action" name="eventAction" value="operational" data-permission="addLogs" type="submit">Mark Operational</button>
+                <button class="outline-button" name="eventAction" value="log" data-permission="addLogs" type="submit">Save Note</button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <section class="detail-hero panel" id="machineDetail"></section>
+
+        <nav class="record-tabs" aria-label="Machine sections">
+          <button class="active" data-machine-tab="overview" type="button">Overview</button>
+          <button data-machine-tab="logs" type="button">Logs</button>
+          <button data-machine-tab="pm" type="button">PM Schedule</button>
+        </nav>
+
+        <div class="machine-page-grid">
+          <div class="left-stack" data-tab-panel="overview">
+            <section class="panel">
+              <div class="panel-title"><h2>Status History</h2></div>
+              <div class="timeline" id="machineTimeline"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-title"><h2>Open Issues <small id="issueBadge">0</small></h2></div>
+              <div id="machineIssues"></div>
+            </section>
+          </div>
+
+          <div class="middle-stack" data-tab-panel="overview logs">
+            <section class="panel">
+              <div class="panel-title">
+                <h2>Downtime</h2>
+                <div class="date-range-control">
+                  <label><span>Start</span><input id="downtimeStart" type="date" /></label>
+                  <label><span>End</span><input id="downtimeEnd" type="date" /></label>
+                </div>
+              </div>
+              <div class="bar-chart chart-card" id="downtimeChart"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-title"><h2>Recent Maintenance Logs</h2></div>
+              <div class="timeline" id="recentMachineLogs"></div>
+            </section>
+          </div>
+
+          <section class="panel machine-pm-panel" data-tab-panel="pm">
+            <div class="panel-title"><h2>Machine PM Schedule</h2></div>
+            <div class="table-wrap"><table id="machinePmTable"></table></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script src="./config.js"></script>
+    <script type="module" src="./app.js?v=20260807-vercel-neon-clerk"></script>
+  </body>
+</html>
