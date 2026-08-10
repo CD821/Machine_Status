@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Settings | TTS Maintenance</title>
     <meta name="description" content="Configure technicians, issue types, and status labels." />
-    <link rel="stylesheet" href="./styles.css?v=20260807-asset-image-upload" />
+    <link rel="stylesheet" href="./styles.css?v=20260810-settings-save-feedback" />
   </head>
   <body data-page="settings">
     <div class="app-shell">
@@ -65,12 +65,13 @@
             </label>
             <button class="primary-action" type="submit">Add</button>
           </form>
+          <p class="settings-save-status" id="settingsSaveStatus" aria-live="polite"></p>
         </section>
 
         <div class="settings-grid" id="settingsLists"></div>
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260807-clerk-domain-loader"></script>
+    <script type="module" src="./app.js?v=20260810-settings-save-feedback"></script>
   </body>
 </html>

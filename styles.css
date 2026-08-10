@@ -1228,6 +1228,22 @@ h3 {
   align-items: end;
 }
 
+.settings-save-status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-save-status[data-tone="success"] {
+  color: var(--green);
+}
+
+.settings-save-status[data-tone="error"] {
+  color: var(--red);
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

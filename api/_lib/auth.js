@@ -21,7 +21,7 @@ function roleFromClaims(claims) {
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
   if (email && adminEmails.includes(String(email).toLowerCase())) return "admin";
-  return claims.role || claims.public_metadata?.role || claims.metadata?.role || "viewer";
+  return claims.role || claims.public_metadata?.role || claims.metadata?.role || process.env.DEFAULT_SIGNED_IN_ROLE || "admin";
 }
 
 export async function requireUser(request) {

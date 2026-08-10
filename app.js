@@ -1116,6 +1116,13 @@ async function persistSettings() {
   if (state.remoteEnabled) await remoteStore.saveSettings(state.settingsOverrides);
 }
 
+function setSettingsSaveStatus(message = "", tone = "neutral") {
+  const target = $("#settingsSaveStatus");
+  if (!target) return;
+  target.textContent = message;
+  target.dataset.tone = tone;
+}
+
 function applyWorkOrderOverrides() {
   Object.entries(state.workOrderOverrides).forEach(([orderId, override]) => {
     if (!override || typeof override !== "object" || !override.id) return;
@@ -1482,10 +1489,12 @@ function renderSettingsGroup(group, title, items) {
 async function handleSettingsAdd(event) {
   event.preventDefault();
   if (!can("manageSettings")) return;
+  setSettingsSaveStatus("Saving...", "neutral");
   const data = new FormData(event.currentTarget);
   const group = String(data.get("group"));
   const value = String(data.get("value") || "").trim();
   if (!value) return;
+  const snapshot = snapshotSettings();
   if (group === "statuses") {
     const key = slugify(value);
     statusLabels[key] = value;
@@ -1493,11 +1502,18 @@ async function handleSettingsAdd(event) {
     const list = state.data[group];
     if (Array.isArray(list) && !list.includes(value)) list.push(value);
   }
-  await persistSettings();
-  event.currentTarget.reset();
-  hydrateFormOptions();
-  hydrateWorkOrderFormOptions();
-  renderSettings();
+  try {
+    await persistSettings();
+    event.currentTarget.reset();
+    hydrateFormOptions();
+    hydrateWorkOrderFormOptions();
+    renderSettings();
+    setSettingsSaveStatus("Saved.", "success");
+  } catch (error) {
+    restoreSettings(snapshot);
+    renderSettings();
+    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+  }
 }
 
 async function editSetting(group, key) {
@@ -1506,6 +1522,8 @@ async function editSetting(group, key) {
   if (!current) return;
   const next = window.prompt(`Edit ${settingTitle(group)}`, current);
   if (!next || !next.trim()) return;
+  const snapshot = snapshotSettings();
+  setSettingsSaveStatus("Saving...", "neutral");
   if (group === "statuses") {
     if (key) statusLabels[key] = next.trim();
   } else if (Array.isArray(state.data[group])) {
@@ -1513,15 +1531,24 @@ async function editSetting(group, key) {
     if (index < 0) return;
     state.data[group][index] = next.trim();
   }
-  await persistSettings();
-  hydrateFormOptions();
-  hydrateWorkOrderFormOptions();
-  renderSettings();
-  renderPage();
+  try {
+    await persistSettings();
+    hydrateFormOptions();
+    hydrateWorkOrderFormOptions();
+    renderSettings();
+    renderPage();
+    setSettingsSaveStatus("Saved.", "success");
+  } catch (error) {
+    restoreSettings(snapshot);
+    renderSettings();
+    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+  }
 }
 
 async function deleteSetting(group, key) {
   if (!can("manageSettings")) return;
+  const snapshot = snapshotSettings();
+  setSettingsSaveStatus("Saving...", "neutral");
   if (group === "statuses") {
     if (key && ![...logStatusKeys, ...workOrderStatusKeys].includes(key)) delete statusLabels[key];
   } else if (Array.isArray(state.data[group])) {
@@ -1529,10 +1556,32 @@ async function deleteSetting(group, key) {
     if (index < 0) return;
     state.data[group].splice(index, 1);
   }
-  await persistSettings();
-  hydrateFormOptions();
-  hydrateWorkOrderFormOptions();
-  renderSettings();
+  try {
+    await persistSettings();
+    hydrateFormOptions();
+    hydrateWorkOrderFormOptions();
+    renderSettings();
+    setSettingsSaveStatus("Saved.", "success");
+  } catch (error) {
+    restoreSettings(snapshot);
+    renderSettings();
+    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+  }
+}
+
+function snapshotSettings() {
+  return {
+    technicians: [...state.data.technicians],
+    issueTypes: [...state.data.issueTypes],
+    statusLabels: { ...statusLabels },
+  };
+}
+
+function restoreSettings(snapshot) {
+  state.data.technicians = [...snapshot.technicians];
+  state.data.issueTypes = [...snapshot.issueTypes];
+  Object.keys(statusLabels).forEach((key) => delete statusLabels[key]);
+  Object.assign(statusLabels, snapshot.statusLabels);
 }
 
 function settingValue(group, key) {
