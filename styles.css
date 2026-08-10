@@ -362,7 +362,7 @@ table select,
 
 .account-button {
   background: #3557ff;
-  color: #344054;
+  color: #fff;
   cursor: pointer;
   background-position: center;
   background-size: cover;
@@ -2185,6 +2185,11 @@ tr:hover td {
 
 .user-dot {
   background: rgba(255, 255, 255, 0.85);
+}
+
+.user-dot.account-button {
+  background: #3557ff;
+  color: #fff;
 }
 
 .role-preview-panel {
