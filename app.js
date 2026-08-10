@@ -551,11 +551,17 @@ function renderScheduleRail(event) {
 
 function renderMachineDetail() {
   const machine = selectedMachine();
-  if (!machine) return;
+  if (!machine) {
+    $("#machineDetail").innerHTML = emptyMessage("No assets are available yet.");
+    setText("#machineTimeline", "");
+    setText("#recentMachineLogs", "");
+    setText("#downtimeChart", "");
+    return;
+  }
   document.title = `${machine.name} | TTS Maintenance`;
   const status = normalizeStatus(machine.currentStatus);
   $("#machineDetail").innerHTML = `
-      <div class="machine-photo ${machine.category.toLowerCase()}">
+      <div class="machine-photo ${String(machine.category || "asset").toLowerCase()}">
       ${machinePhoto(machine)}
     </div>
     <div class="detail-summary">
@@ -591,6 +597,11 @@ function renderRecentLog(update) {
 
 function renderMachineIssues() {
   const machine = selectedMachine();
+  if (!machine) {
+    setText("#issueBadge", "0");
+    $("#machineIssues").innerHTML = emptyMessage("No open issues for this machine.");
+    return;
+  }
   const issues = activeWorkOrders().filter((order) => order.machineId === machine.id);
   setText("#issueBadge", issues.length);
   $("#machineIssues").innerHTML = issues.map(renderIssueCard).join("") || emptyMessage("No open issues for this machine.");
@@ -599,6 +610,10 @@ function renderMachineIssues() {
 function renderMachinePm() {
   if (!$("#machinePmTable")) return;
   const machine = selectedMachine();
+  if (!machine) {
+    $("#machinePmTable").innerHTML = `<tbody><tr><td>No PM schedule is set yet.</td></tr></tbody>`;
+    return;
+  }
   const rows = pmWithLogDueDates().filter((pm) => pm.machineId === machine.id);
   $("#machinePmTable").innerHTML = rows.length
     ? table(
