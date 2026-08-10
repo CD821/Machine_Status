@@ -685,6 +685,11 @@ h3 {
   color: var(--green);
 }
 
+.summary-icon.status-operational {
+  background: var(--green);
+  color: #fff;
+}
+
 .status-down,
 .status-urgent,
 .priority-urgent,
