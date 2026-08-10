@@ -191,9 +191,11 @@ async function currentUser() {
     const user = instance?.user;
     const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || "";
     const name = user?.fullName || user?.username || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || email || "Shop User";
+    const profile = await api("me").catch(() => ({ role: "viewer" }));
     return {
       name,
       email,
+      role: profile.role || "viewer",
       imageUrl: user?.imageUrl || "",
       initials: initialsFromName(name || email),
     };
@@ -204,6 +206,7 @@ async function currentUser() {
   return {
     name,
     email,
+    role: "admin",
     imageUrl: "",
     initials: initialsFromName(name),
   };

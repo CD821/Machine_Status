@@ -14,6 +14,7 @@ const state = {
   savedAssets: JSON.parse(localStorage.getItem("tts-assets") || "null"),
   pmSchedule: null,
   remoteEnabled: false,
+  actualRole: "admin",
   rolePreview: localStorage.getItem("tts-role-preview") || "admin",
   downtimeStart: "",
   downtimeEnd: "",
@@ -103,6 +104,10 @@ async function init() {
   if (state.remoteEnabled && !(await remoteStore.isSignedIn())) {
     location.href = "./login.html";
     return;
+  }
+  if (state.remoteEnabled) {
+    const user = await remoteStore.currentUser().catch(() => ({ role: "viewer" }));
+    state.actualRole = roles[user.role] ? user.role : "viewer";
   }
   state.data = await remoteStore.loadData(state.data);
   if (state.data.statusLabels) Object.assign(statusLabels, state.data.statusLabels);
@@ -221,8 +226,9 @@ function bindSharedEvents() {
   }
   const roleSelect = $("#rolePreview");
   if (roleSelect) {
-    roleSelect.value = state.rolePreview;
+    roleSelect.value = effectiveRole();
     roleSelect.addEventListener("change", (event) => {
+      if (state.remoteEnabled) return;
       state.rolePreview = event.target.value;
       localStorage.setItem("tts-role-preview", state.rolePreview);
       renderPage();
@@ -394,7 +400,11 @@ function renderPage() {
 }
 
 function can(permission) {
-  return roles[state.rolePreview]?.permissions.includes(permission);
+  return roles[effectiveRole()]?.permissions.includes(permission);
+}
+
+function effectiveRole() {
+  return state.remoteEnabled ? state.actualRole : state.rolePreview;
 }
 
 function enforcePageAccess() {
@@ -410,12 +420,17 @@ function enforcePageAccess() {
 }
 
 function applyRolePreview() {
-  document.body.dataset.role = state.rolePreview;
-  const activeRole = roles[state.rolePreview] || roles.admin;
+  const role = effectiveRole();
+  document.body.dataset.role = role;
+  const activeRole = roles[role] || roles.viewer;
   setText("#activeRoleLabel", activeRole.label);
   setText("#activeRoleDescription", activeRole.description);
   const roleSelect = $("#rolePreview");
-  if (roleSelect) roleSelect.value = state.rolePreview;
+  if (roleSelect) {
+    roleSelect.value = role;
+    roleSelect.disabled = state.remoteEnabled;
+    roleSelect.title = state.remoteEnabled ? "Role is controlled by Clerk metadata." : "";
+  }
   $$("[data-viewer-hidden]").forEach((element) => {
     element.hidden = can("dashboardOnly");
   });
