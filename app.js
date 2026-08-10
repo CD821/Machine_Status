@@ -132,6 +132,7 @@ async function init() {
 
 function bindSharedEvents() {
   bindSidebarControls();
+  bindAccountMenu();
 
   const search = $("#searchInput");
   if (search) {
@@ -266,6 +267,27 @@ function bindSharedEvents() {
     const deleteSettingButton = event.target.closest("[data-delete-setting]");
     if (deleteSettingButton) {
       deleteSetting(deleteSettingButton.dataset.settingGroup, deleteSettingButton.dataset.settingKey);
+    }
+    const accountButton = event.target.closest("[data-account-button]");
+    const accountMenu = $("#accountMenu");
+    if (accountButton && accountMenu) {
+      const isOpen = !accountMenu.hidden;
+      accountMenu.hidden = isOpen;
+      accountButton.setAttribute("aria-expanded", String(!isOpen));
+      return;
+    }
+    const signOutButton = event.target.closest("[data-account-signout]");
+    if (signOutButton) {
+      signOutButton.disabled = true;
+      signOutButton.textContent = "Signing out...";
+      remoteStore.signOut().finally(() => {
+        location.href = "./login.html";
+      });
+      return;
+    }
+    if (accountMenu && !event.target.closest(".account-menu-wrap")) {
+      accountMenu.hidden = true;
+      $("[data-account-button]")?.setAttribute("aria-expanded", "false");
     }
   });
 
@@ -893,7 +915,8 @@ function renderLogs() {
 async function handleLogSubmit(event) {
   event.preventDefault();
   if (!can("addLogs")) return;
-  const form = new FormData(event.currentTarget);
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
   const machine = state.data.machines.find((item) => item.id === form.get("machineId"));
   const action = event.submitter?.value || "log";
   const downAt = String(form.get("downAt") || "");
@@ -924,7 +947,7 @@ async function handleLogSubmit(event) {
   state.selectedMachineId = machine.id;
   setText("#saveState", state.remoteEnabled ? "Saved" : "Saved locally");
   setTimeout(() => setText("#saveState", "Ready"), 2200);
-  event.currentTarget.reset();
+  formElement.reset();
   closeLogForm();
   hydrateFormOptions();
   renderMachineDetail();
@@ -1129,6 +1152,58 @@ async function persistSettings() {
   };
   localStorage.setItem("tts-settings", JSON.stringify(state.settingsOverrides));
   if (state.remoteEnabled) await remoteStore.saveSettings(state.settingsOverrides);
+}
+
+async function bindAccountMenu() {
+  const dot = $(".user-dot");
+  const actions = dot?.closest(".topbar-actions");
+  if (!dot || !actions || actions.querySelector(".account-menu-wrap")) return;
+
+  const user = await remoteStore.currentUser().catch(() => ({
+    name: "Shop User",
+    email: "",
+    imageUrl: "",
+    initials: "U",
+  }));
+  const label = $(".shop-user");
+  if (label) label.textContent = user.name || "Shop User";
+
+  dot.textContent = user.initials || "U";
+  dot.setAttribute("role", "button");
+  dot.setAttribute("tabindex", "0");
+  dot.setAttribute("aria-label", "Account menu");
+  dot.setAttribute("aria-haspopup", "menu");
+  dot.setAttribute("aria-expanded", "false");
+  dot.dataset.accountButton = "true";
+  dot.classList.add("account-button");
+  if (user.imageUrl) {
+    dot.textContent = "";
+    dot.style.backgroundImage = `url("${user.imageUrl}")`;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "account-menu-wrap";
+  dot.before(wrap);
+  wrap.append(dot);
+  wrap.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="account-menu" id="accountMenu" role="menu" hidden>
+        <div class="account-menu-user">
+          <strong>${escapeHtml(user.name || "Shop User")}</strong>
+          <span>${escapeHtml(user.email || "Signed in")}</span>
+        </div>
+        <button class="outline-button account-signout" data-account-signout type="button" role="menuitem">Sign out</button>
+      </div>
+    `,
+  );
+
+  dot.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      dot.click();
+    }
+  });
 }
 
 function setSettingsSaveStatus(message = "", tone = "neutral") {
@@ -1512,7 +1587,8 @@ async function handleSettingsAdd(event) {
   event.preventDefault();
   if (!can("manageSettings")) return;
   setSettingsSaveStatus("Saving...", "neutral");
-  const data = new FormData(event.currentTarget);
+  const form = event.currentTarget;
+  const data = new FormData(form);
   const group = String(data.get("group"));
   const value = String(data.get("value") || "").trim();
   if (!value) return;
@@ -1526,7 +1602,7 @@ async function handleSettingsAdd(event) {
   }
   try {
     await persistSettings();
-    event.currentTarget.reset();
+    form.reset();
     hydrateFormOptions();
     hydrateWorkOrderFormOptions();
     renderSettings();

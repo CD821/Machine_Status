@@ -175,13 +175,46 @@ async function signIn(email, password) {
   return session;
 }
 
-function signOut() {
+async function signOut() {
   if (backendEnabled) {
-    clerk().then((instance) => instance?.signOut?.()).catch(() => {});
+    const instance = await clerk();
+    await instance?.signOut?.();
     localStorage.removeItem(clerkSignedInKey);
     return;
   }
   localStorage.removeItem(supabaseSessionKey);
+}
+
+async function currentUser() {
+  if (backendEnabled) {
+    const instance = await clerk();
+    const user = instance?.user;
+    const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || "";
+    const name = user?.fullName || user?.username || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || email || "Shop User";
+    return {
+      name,
+      email,
+      imageUrl: user?.imageUrl || "",
+      initials: initialsFromName(name || email),
+    };
+  }
+  const session = currentSupabaseSession();
+  const email = session?.user?.email || "";
+  const name = email || "Shop User";
+  return {
+    name,
+    email,
+    imageUrl: "",
+    initials: initialsFromName(name),
+  };
+}
+
+function initialsFromName(value) {
+  const parts = String(value || "U")
+    .replace(/@.*/, "")
+    .split(/\s+|[._-]+/)
+    .filter(Boolean);
+  return (parts[0]?.[0] || "U").toUpperCase();
 }
 
 function machineFromDb(row) {
@@ -389,6 +422,7 @@ export const remoteStore = {
   isSignedIn,
   signIn,
   signOut,
+  currentUser,
   loadData,
   saveMachine,
   saveLog,
