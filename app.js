@@ -1123,6 +1123,13 @@ function setSettingsSaveStatus(message = "", tone = "neutral") {
   target.dataset.tone = tone;
 }
 
+function settingsSaveErrorMessage(error) {
+  const raw = String(error?.message || "Unknown error");
+  const match = raw.match(/"error"\s*:\s*"([^"]+)"/);
+  const detail = match?.[1] || raw;
+  return `Could not save: ${detail}`;
+}
+
 function applyWorkOrderOverrides() {
   Object.entries(state.workOrderOverrides).forEach(([orderId, override]) => {
     if (!override || typeof override !== "object" || !override.id) return;
@@ -1512,7 +1519,7 @@ async function handleSettingsAdd(event) {
   } catch (error) {
     restoreSettings(snapshot);
     renderSettings();
-    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+    setSettingsSaveStatus(settingsSaveErrorMessage(error), "error");
   }
 }
 
@@ -1541,7 +1548,7 @@ async function editSetting(group, key) {
   } catch (error) {
     restoreSettings(snapshot);
     renderSettings();
-    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+    setSettingsSaveStatus(settingsSaveErrorMessage(error), "error");
   }
 }
 
@@ -1565,7 +1572,7 @@ async function deleteSetting(group, key) {
   } catch (error) {
     restoreSettings(snapshot);
     renderSettings();
-    setSettingsSaveStatus("Could not save. Check your Clerk role or server settings.", "error");
+    setSettingsSaveStatus(settingsSaveErrorMessage(error), "error");
   }
 }
 
