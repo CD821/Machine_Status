@@ -361,6 +361,8 @@ table select,
 }
 
 .account-button {
+  background: #3557ff;
+  color: #fff;
   cursor: pointer;
   background-position: center;
   background-size: cover;
@@ -512,7 +514,9 @@ h3 {
 .summary-icon {
   width: 22px;
   height: 22px;
-  font-size: 13px;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .dashboard-grid {

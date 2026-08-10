@@ -477,7 +477,13 @@ function renderSummary() {
     ["⌘", "Urgent Repair", urgent, "urgent"],
     ["▦", "Total Assets", counts.total, "unknown"],
   ];
-  $("#summaryRow").innerHTML = cards
+  $("#summaryRow").innerHTML = [
+    ["OK", "Operational", counts.operational || 0, "operational"],
+    ["!", "Down", counts.down || 0, "down"],
+    ["PM", "PM Due", counts.maintenance || 0, "maintenance"],
+    ["!", "Urgent Repair", urgent, "urgent"],
+    ["EQ", "Total Assets", counts.total, "unknown"],
+  ]
     .map(
       ([icon, label, value, status]) => `
         <article class="summary-card">
@@ -1165,8 +1171,13 @@ async function bindAccountMenu() {
     imageUrl: "",
     initials: "U",
   }));
-  const label = $(".shop-user");
-  if (label) label.textContent = user.name || "Shop User";
+  let label = actions.querySelector(".shop-user");
+  if (!label) {
+    label = document.createElement("span");
+    label.className = "shop-user";
+    dot.after(label);
+  }
+  label.textContent = user.name || "Shop User";
 
   dot.textContent = user.initials || "U";
   dot.setAttribute("role", "button");
@@ -1176,10 +1187,7 @@ async function bindAccountMenu() {
   dot.setAttribute("aria-expanded", "false");
   dot.dataset.accountButton = "true";
   dot.classList.add("account-button");
-  if (user.imageUrl) {
-    dot.textContent = "";
-    dot.style.backgroundImage = `url("${user.imageUrl}")`;
-  }
+  dot.style.backgroundImage = "";
 
   const wrap = document.createElement("div");
   wrap.className = "account-menu-wrap";
