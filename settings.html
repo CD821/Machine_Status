@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Settings | TTS Maintenance</title>
     <meta name="description" content="Configure technicians, issue types, and status labels." />
-    <link rel="stylesheet" href="./styles.css?v=20260810-account-name-icons" />
+    <link rel="stylesheet" href="./styles.css?v=20260810-user-access" />
   </head>
   <body data-page="settings">
     <div class="app-shell">
@@ -29,25 +29,6 @@
           <h1>Settings</h1>
         </div>
 
-        <section class="panel role-preview-panel">
-          <div class="panel-title">
-            <h2>Role Preview</h2>
-            <span class="status-chip status-operational" id="activeRoleLabel">Admin</span>
-          </div>
-          <form class="settings-add-form">
-            <label>
-              <span>Preview As</span>
-              <select id="rolePreview" name="rolePreview">
-                <option value="admin">Admin</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="technician">Technician</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </label>
-            <p class="role-description" id="activeRoleDescription">Full access to assets, settings, work orders, schedules, and logs.</p>
-          </form>
-        </section>
-
         <section class="panel" data-permission="manageSettings">
           <div class="panel-title"><h2>Add Setting</h2></div>
           <form class="settings-add-form" id="settingsAddForm">
@@ -68,10 +49,36 @@
           <p class="settings-save-status" id="settingsSaveStatus" aria-live="polite"></p>
         </section>
 
+        <section class="panel user-access-card" data-permission="manageSettings">
+          <div class="panel-title">
+            <div>
+              <h2>User Access</h2>
+              <small>Assign what each signed-in user can see and change.</small>
+            </div>
+          </div>
+          <form class="user-role-form" id="userRoleForm">
+            <label>
+              <span>User Email</span>
+              <input name="email" type="email" required placeholder="name@tts.us.com" />
+            </label>
+            <label>
+              <span>Role</span>
+              <select name="role">
+                <option value="admin">Admin</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="technician">Technician</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </label>
+            <button class="primary-action" type="submit">Grant Access</button>
+          </form>
+          <div class="user-access-list" id="userAccessList"></div>
+        </section>
+
         <div class="settings-grid" id="settingsLists"></div>
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260810-real-clerk-roles"></script>
+    <script type="module" src="./app.js?v=20260810-user-access"></script>
   </body>
 </html>

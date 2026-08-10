@@ -24,6 +24,7 @@ export default async function handler(request, response) {
       technicians: settings.technicians || [],
       issueTypes: settings.issueTypes || [],
       statusLabels: settings.statusLabels || {},
+      userRoles: settings.userRoles || {},
     });
   });
 }

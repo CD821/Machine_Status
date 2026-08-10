@@ -15,6 +15,7 @@ const state = {
   pmSchedule: null,
   remoteEnabled: false,
   actualRole: "admin",
+  accessUsers: [],
   rolePreview: localStorage.getItem("tts-role-preview") || "admin",
   downtimeStart: "",
   downtimeEnd: "",
@@ -110,6 +111,10 @@ async function init() {
     state.actualRole = roles[user.role] ? user.role : "viewer";
   }
   state.data = await remoteStore.loadData(state.data);
+  state.data.userRoles = state.data.userRoles && typeof state.data.userRoles === "object" ? state.data.userRoles : {};
+  if (state.page === "settings" && state.remoteEnabled && can("manageSettings")) {
+    state.accessUsers = await remoteStore.listUsers().catch(() => []);
+  }
   if (state.data.statusLabels) Object.assign(statusLabels, state.data.statusLabels);
   clearLegacyDemoStorage();
   if (!state.remoteEnabled) {
@@ -211,6 +216,8 @@ function bindSharedEvents() {
 
   const settingsAddForm = $("#settingsAddForm");
   if (settingsAddForm) settingsAddForm.addEventListener("submit", handleSettingsAdd);
+  const userRoleForm = $("#userRoleForm");
+  if (userRoleForm) userRoleForm.addEventListener("submit", handleUserRoleSubmit);
   const downtimeStart = $("#downtimeStart");
   const downtimeEnd = $("#downtimeEnd");
   if (downtimeStart && downtimeEnd) {
@@ -273,6 +280,14 @@ function bindSharedEvents() {
     const deleteSettingButton = event.target.closest("[data-delete-setting]");
     if (deleteSettingButton) {
       deleteSetting(deleteSettingButton.dataset.settingGroup, deleteSettingButton.dataset.settingKey);
+    }
+    const roleSelect = event.target.closest("[data-user-role-select]");
+    if (roleSelect) {
+      updateUserRole(roleSelect.dataset.userRoleKey, roleSelect.value);
+    }
+    const removeUserRoleButton = event.target.closest("[data-remove-user-role]");
+    if (removeUserRoleButton) {
+      removeUserRole(removeUserRoleButton.dataset.removeUserRole);
     }
     const accountButton = event.target.closest("[data-account-button]");
     const accountMenu = $("#accountMenu");
@@ -1163,6 +1178,9 @@ function applySettingsOverrides() {
   if (state.settingsOverrides.statusLabels && typeof state.settingsOverrides.statusLabels === "object") {
     Object.assign(statusLabels, state.settingsOverrides.statusLabels);
   }
+  if (state.settingsOverrides.userRoles && typeof state.settingsOverrides.userRoles === "object") {
+    state.data.userRoles = state.settingsOverrides.userRoles;
+  }
 }
 
 async function persistSettings() {
@@ -1170,6 +1188,7 @@ async function persistSettings() {
     technicians: state.data.technicians,
     issueTypes: state.data.issueTypes,
     statusLabels: { ...statusLabels },
+    userRoles: { ...(state.data.userRoles || {}) },
   };
   localStorage.setItem("tts-settings", JSON.stringify(state.settingsOverrides));
   if (state.remoteEnabled) await remoteStore.saveSettings(state.settingsOverrides);
@@ -1570,11 +1589,86 @@ async function handleWorkOrderSubmit(event) {
 
 function renderSettings() {
   if (!$("#settingsLists")) return;
+  renderUserAccess();
   $("#settingsLists").innerHTML = [
     renderSettingsGroup("technicians", "Technicians", state.data.technicians),
     renderSettingsGroup("issueTypes", "Issue Types", state.data.issueTypes),
     renderSettingsGroup("statuses", "Statuses", Object.entries(statusLabels).map(([key, label]) => ({ key, label: `${key}: ${label}` }))),
   ].join("");
+}
+
+function renderUserAccess() {
+  const target = $("#userAccessList");
+  if (!target) return;
+  const assignments = state.data.userRoles || {};
+  const clerkRows = (state.accessUsers || []).map((user) => {
+    const email = String(user.email || "").toLowerCase();
+    const assignedRole = assignments[user.id] || assignments[email] || normalizeRoleKey(user.role) || "viewer";
+    return renderUserAccessRow({
+      key: user.id,
+      name: user.name || user.email || "User",
+      email: user.email || "No email",
+      role: assignedRole,
+      source: assignments[user.id] || assignments[email] ? "Custom access" : "Clerk/default",
+      removable: Boolean(assignments[user.id] || assignments[email]),
+    });
+  });
+  const clerkKeys = new Set((state.accessUsers || []).flatMap((user) => [user.id, String(user.email || "").toLowerCase()]));
+  const manualRows = Object.entries(assignments)
+    .filter(([key]) => !clerkKeys.has(key))
+    .map(([key, role]) =>
+      renderUserAccessRow({
+        key,
+        name: key.includes("@") ? key : "Assigned User",
+        email: key.includes("@") ? key : "Clerk user ID",
+        role,
+        source: "Manual access",
+        removable: true,
+      }),
+    );
+  const rows = [...clerkRows, ...manualRows];
+  target.innerHTML = rows.length
+    ? rows.join("")
+    : `<div class="empty-state compact-empty">No users found yet. Add someone by email above.</div>`;
+}
+
+function renderUserAccessRow(user) {
+  return `
+    <div class="user-access-row">
+      <div class="user-access-person">
+        <span class="user-access-avatar">${escapeHtml(initialsFromName(user.name || user.email))}</span>
+        <span>
+          <strong>${escapeHtml(user.name)}</strong>
+          <small>${escapeHtml(user.email)} · ${escapeHtml(user.source)}</small>
+        </span>
+      </div>
+      <div class="user-access-controls">
+        <select data-user-role-select data-user-role-key="${escapeHtml(user.key)}" aria-label="Role for ${escapeHtml(user.name)}">
+          ${roleOptionsHtml(user.role)}
+        </select>
+        <button class="outline-button" data-remove-user-role="${escapeHtml(user.key)}" ${user.removable ? "" : "disabled"} type="button">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+function roleOptionsHtml(selectedRole) {
+  return Object.entries(roles)
+    .map(([key, role]) => `<option value="${key}" ${key === selectedRole ? "selected" : ""}>${escapeHtml(role.label)}</option>`)
+    .join("");
+}
+
+function normalizeRoleKey(value) {
+  const role = String(value || "").trim().toLowerCase();
+  return roles[role] ? role : "";
+}
+
+function initialsFromName(value) {
+  const parts = String(value || "User")
+    .replace(/@.*/, "")
+    .split(/\s+|[._-]+/)
+    .filter(Boolean);
+  return (parts[0]?.[0] || "U").toUpperCase();
 }
 
 function renderSettingsGroup(group, title, items) {
@@ -1690,11 +1784,62 @@ async function deleteSetting(group, key) {
   }
 }
 
+async function handleUserRoleSubmit(event) {
+  event.preventDefault();
+  if (!can("manageSettings")) return;
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const email = String(data.get("email") || "").trim().toLowerCase();
+  const role = normalizeRoleKey(data.get("role"));
+  if (!email || !role) return;
+  await updateUserRole(email, role, { resetForm: form });
+}
+
+async function updateUserRole(key, role, options = {}) {
+  if (!can("manageSettings")) return;
+  const cleanKey = String(key || "").trim();
+  const cleanRole = normalizeRoleKey(role);
+  if (!cleanKey || !cleanRole) return;
+  const snapshot = snapshotSettings();
+  setSettingsSaveStatus("Saving access...", "neutral");
+  state.data.userRoles = { ...(state.data.userRoles || {}), [cleanKey]: cleanRole };
+  try {
+    await persistSettings();
+    options.resetForm?.reset();
+    renderSettings();
+    setSettingsSaveStatus("Access updated.", "success");
+  } catch (error) {
+    restoreSettings(snapshot);
+    renderSettings();
+    setSettingsSaveStatus(settingsSaveErrorMessage(error), "error");
+  }
+}
+
+async function removeUserRole(key) {
+  if (!can("manageSettings")) return;
+  const cleanKey = String(key || "").trim();
+  if (!cleanKey) return;
+  const snapshot = snapshotSettings();
+  setSettingsSaveStatus("Saving access...", "neutral");
+  state.data.userRoles = { ...(state.data.userRoles || {}) };
+  delete state.data.userRoles[cleanKey];
+  try {
+    await persistSettings();
+    renderSettings();
+    setSettingsSaveStatus("Access removed.", "success");
+  } catch (error) {
+    restoreSettings(snapshot);
+    renderSettings();
+    setSettingsSaveStatus(settingsSaveErrorMessage(error), "error");
+  }
+}
+
 function snapshotSettings() {
   return {
     technicians: [...state.data.technicians],
     issueTypes: [...state.data.issueTypes],
     statusLabels: { ...statusLabels },
+    userRoles: { ...(state.data.userRoles || {}) },
   };
 }
 
@@ -1703,6 +1848,7 @@ function restoreSettings(snapshot) {
   state.data.issueTypes = [...snapshot.issueTypes];
   Object.keys(statusLabels).forEach((key) => delete statusLabels[key]);
   Object.assign(statusLabels, snapshot.statusLabels);
+  state.data.userRoles = { ...snapshot.userRoles };
 }
 
 function settingValue(group, key) {

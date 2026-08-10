@@ -362,6 +362,7 @@ async function loadData(seedData) {
     technicians: settings.technicians || seedData.technicians,
     issueTypes: settings.issueTypes || seedData.issueTypes,
     statusLabels: settings.statusLabels || {},
+    userRoles: settings.userRoles || {},
   };
 }
 
@@ -409,6 +410,14 @@ async function saveSettings(settings) {
   });
 }
 
+async function listUsers() {
+  if (backendEnabled) {
+    const payload = await api("users");
+    return payload.users || [];
+  }
+  return [];
+}
+
 async function isSignedIn() {
   if (backendEnabled) {
     const instance = await clerk();
@@ -432,4 +441,5 @@ export const remoteStore = {
   saveWorkOrder,
   deleteWorkOrder,
   saveSettings,
+  listUsers,
 };

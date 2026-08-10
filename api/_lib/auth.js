@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { jsonResponse } from "./db.js";
+import { jsonResponse, sql } from "./db.js";
 
 const protectedWriteRoles = new Set(["admin", "supervisor"]);
 const logWriteRoles = new Set(["admin", "supervisor", "technician"]);
@@ -43,7 +43,20 @@ function roleFromClaims(claims) {
   );
 }
 
-async function roleFromClerkUser(userId) {
+async function userRoleAssignments() {
+  try {
+    const rows = await sql`select value from app_settings where key = 'userRoles' limit 1`;
+    return rows[0]?.value && typeof rows[0].value === "object" ? rows[0].value : {};
+  } catch {
+    return {};
+  }
+}
+
+function roleFromAssignments(assignments, userId, email = "") {
+  return normalizeRole(assignments[userId]) || normalizeRole(assignments[String(email || "").toLowerCase()]);
+}
+
+async function roleFromClerkUser(userId, assignments = {}) {
   const secret = process.env.CLERK_SECRET_KEY;
   if (!secret || !userId) return "";
   const response = await fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(userId)}`, {
@@ -56,11 +69,14 @@ async function roleFromClerkUser(userId) {
   const user = await response.json();
   const email = user.email_addresses?.find((item) => item.id === user.primary_email_address_id)?.email_address || user.email_addresses?.[0]?.email_address || "";
   if (isAdminEmail(email)) return "admin";
-  return normalizeRole(user.public_metadata?.role || user.private_metadata?.role || user.unsafe_metadata?.role);
+  return roleFromAssignments(assignments, userId, email) || normalizeRole(user.public_metadata?.role || user.private_metadata?.role || user.unsafe_metadata?.role);
 }
 
 async function roleForUser(claims) {
-  return roleFromClaims(claims) || (await roleFromClerkUser(claims.sub)) || normalizeRole(process.env.DEFAULT_SIGNED_IN_ROLE) || "viewer";
+  const assignments = await userRoleAssignments();
+  const email = emailFromClaims(claims);
+  if (isAdminEmail(email)) return "admin";
+  return roleFromAssignments(assignments, claims.sub, email) || roleFromClaims(claims) || (await roleFromClerkUser(claims.sub, assignments)) || normalizeRole(process.env.DEFAULT_SIGNED_IN_ROLE) || "viewer";
 }
 
 export async function requireUser(request) {
