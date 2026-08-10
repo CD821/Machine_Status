@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PM Schedule | TTS Maintenance</title>
     <meta name="description" content="Preventive maintenance calendar and due-by-hours planning." />
-    <link rel="stylesheet" href="./styles.css?v=20260810-user-access" />
+    <link rel="stylesheet" href="./styles.css?v=20260810-ticket-calendar" />
   </head>
   <body data-page="schedule">
     <div class="app-shell">
       <aside class="sidebar" aria-label="Main navigation">
         <nav class="nav-list">
           <a class="nav-item" href="./index.html"><span class="icon">◴</span><span>Live Status</span></a>
-          <a class="nav-item" data-viewer-hidden href="./workorders.html"><span class="icon">▤</span><span>Work Orders</span></a>
+          <a class="nav-item" data-viewer-hidden href="./workorders.html"><span class="icon">▤</span><span>Tickets</span></a>
           <a class="nav-item active" data-viewer-hidden href="./schedule.html"><span class="icon">▣</span><span>PM Schedules</span></a>
           <a class="nav-item" data-viewer-hidden href="./machines.html"><span class="icon">▧</span><span>Assets</span></a>
           <a class="nav-item" data-viewer-hidden href="./logs.html"><span class="icon">≡</span><span>Reports</span></a>
@@ -20,7 +20,7 @@
         </nav>
         <div class="quick-create">
           <span>Quick Create</span>
-          <a class="primary-action" href="./workorders.html">Create Work Order</a>
+          <a class="primary-action" href="./workorders.html">Create Ticket</a>
           <button data-permission="schedulePm" type="button">Schedule PM</button>
         </div>
       </aside>
@@ -31,7 +31,7 @@
           <select aria-label="Filter technician"><option>All Technicians</option></select>
           <select aria-label="Filter status"><option>All Statuses</option></select>
           <select aria-label="Filter priority"><option>All Priorities</option></select>
-          <span class="control-pill">Aug 3 - Aug 9, 2026</span>
+          <span class="control-pill" id="scheduleRangeLabel">This week</span>
         </header>
         <div class="page-heading">
           <h1>PM Schedule</h1>
@@ -40,8 +40,8 @@
         <div class="modal-backdrop" id="workOrderFormPanel" hidden>
           <section class="panel work-order-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="workOrderFormTitle">
             <div class="panel-title">
-              <h2 id="workOrderFormTitle">Edit Work Order</h2>
-              <button class="icon-button" id="cancelWorkOrder" type="button" aria-label="Close work order form">x</button>
+              <h2 id="workOrderFormTitle">Edit Ticket</h2>
+              <button class="icon-button" id="cancelWorkOrder" type="button" aria-label="Close ticket form">x</button>
             </div>
             <form class="work-order-form" id="workOrderForm">
               <input name="id" type="hidden" />
@@ -53,7 +53,7 @@
               <label class="wide"><span>Issue</span><input name="issue" type="text" required placeholder="Describe the repair or maintenance issue" /></label>
               <label class="wide"><span>Parts Needed</span><input name="partsNeeded" type="text" placeholder="Pendant switch, seal kit, belt guide" /></label>
               <div class="form-actions wide">
-                <button class="primary-action" data-permission="manageWorkOrders" type="submit">Save Work Order</button>
+                <button class="primary-action" data-permission="manageWorkOrders" type="submit">Save Ticket</button>
                 <button class="outline-button" data-cancel-work-order type="button">Cancel</button>
               </div>
             </form>
@@ -68,17 +68,18 @@
                 <button data-schedule-view="month" type="button">Month</button>
                 <button data-schedule-view="list" type="button">List</button>
               </div>
+              <input class="month-picker" id="scheduleMonthPicker" type="month" hidden />
             </div>
             <div class="calendar" id="pmCalendar"></div>
           </section>
           <section class="panel">
-            <div class="panel-title"><h2>Work Orders</h2><a class="text-button" href="./workorders.html">View all</a></div>
+            <div class="panel-title"><h2>Tickets</h2><a class="text-button" href="./workorders.html">View all</a></div>
             <div class="table-wrap"><table id="workOrdersTable"></table></div>
           </section>
         </div>
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260810-user-access"></script>
+    <script type="module" src="./app.js?v=20260810-ticket-calendar"></script>
   </body>
 </html>

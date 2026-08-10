@@ -1650,6 +1650,16 @@ h3 {
   overflow: hidden;
 }
 
+.month-picker {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .segmented button,
 .tabs button {
   min-height: 34px;

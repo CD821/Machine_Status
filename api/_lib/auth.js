@@ -3,6 +3,8 @@ import { jsonResponse, sql } from "./db.js";
 
 const protectedWriteRoles = new Set(["admin", "supervisor"]);
 const logWriteRoles = new Set(["admin", "supervisor", "technician"]);
+const assetWriteRoles = new Set(["admin", "supervisor", "technician"]);
+const ticketWriteRoles = new Set(["admin", "supervisor", "technician"]);
 const knownRoles = new Set(["admin", "supervisor", "technician", "viewer"]);
 
 function issuer() {
@@ -101,6 +103,8 @@ export async function requireUser(request) {
 export function canWrite(user, area = "standard") {
   if (user.role === "admin") return true;
   if (area === "logs") return logWriteRoles.has(user.role);
+  if (area === "assets") return assetWriteRoles.has(user.role);
+  if (area === "tickets") return ticketWriteRoles.has(user.role);
   return protectedWriteRoles.has(user.role);
 }
 

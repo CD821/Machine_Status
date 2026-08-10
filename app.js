@@ -17,6 +17,7 @@ const state = {
   actualRole: "admin",
   accessUsers: [],
   rolePreview: localStorage.getItem("tts-role-preview") || "admin",
+  scheduleMonth: localDateValue(new Date()).slice(0, 7),
   downtimeStart: "",
   downtimeEnd: "",
 };
@@ -24,22 +25,22 @@ const state = {
 const roles = {
   admin: {
     label: "Admin",
-    description: "Full access to assets, settings, work orders, schedules, and logs.",
+    description: "Full access to assets, settings, tickets, schedules, and logs.",
     permissions: ["viewAlerts", "viewSettings", "manageSettings", "manageAssets", "manageWorkOrders", "closeWorkOrders", "deleteWorkOrders", "addLogs", "schedulePm"],
   },
   supervisor: {
     label: "Supervisor",
-    description: "Runs daily shop workflow, schedules PM, and manages work orders.",
+    description: "Runs daily shop workflow, schedules PM, and manages tickets.",
     permissions: ["viewAlerts", "manageWorkOrders", "closeWorkOrders", "addLogs", "schedulePm"],
   },
   technician: {
     label: "Technician",
-    description: "Updates assigned work, adds maintenance logs, and marks machines down/up.",
-    permissions: ["viewAlerts", "closeWorkOrders", "addLogs"],
+    description: "Creates tickets, edits assets, adds maintenance logs, and marks machines down/up.",
+    permissions: ["viewAlerts", "manageAssets", "manageWorkOrders", "closeWorkOrders", "addLogs"],
   },
   viewer: {
     label: "Viewer",
-    description: "Read-only access for dashboard, assets, work orders, schedules, and logs.",
+    description: "Read-only access for the live status dashboard.",
     permissions: ["dashboardOnly"],
   },
 };
@@ -169,6 +170,16 @@ function bindSharedEvents() {
       renderSchedule();
     });
   });
+  const scheduleMonthPicker = $("#scheduleMonthPicker");
+  if (scheduleMonthPicker) {
+    scheduleMonthPicker.value = state.scheduleMonth;
+    scheduleMonthPicker.addEventListener("change", () => {
+      state.scheduleMonth = scheduleMonthPicker.value || localDateValue(new Date()).slice(0, 7);
+      state.scheduleView = "month";
+      $$("[data-schedule-view]").forEach((tab) => tab.classList.toggle("active", tab.dataset.scheduleView === "month"));
+      renderSchedule();
+    });
+  }
 
   $$("[data-machine-tab]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -633,8 +644,9 @@ function renderMachineDetail() {
       <button class="outline-button detail-edit" data-edit-asset="${escapeHtml(machine.id)}" data-permission="manageAssets" type="button">Edit Asset</button>
     </div>
   `;
-  $("#machineTimeline").innerHTML = machineUpdates(machine.id).slice(-5).reverse().map(renderTimelineItem).join("");
-  $("#recentMachineLogs").innerHTML = machineUpdates(machine.id).slice(-6).reverse().map(renderRecentLog).join("");
+  const visibleMachineUpdates = machineUpdates(machine.id).filter((update) => !isImportedHistoryNote(update));
+  $("#machineTimeline").innerHTML = visibleMachineUpdates.slice(-5).reverse().map(renderTimelineItem).join("");
+  $("#recentMachineLogs").innerHTML = visibleMachineUpdates.slice(-6).reverse().map(renderRecentLog).join("");
   renderDowntimeChart(machine);
   if ($("#formMachine")) $("#formMachine").value = machine.id;
 }
@@ -745,10 +757,16 @@ function renderSchedule() {
   if (!$("#pmCalendar")) return;
   const schedule = $("#pmCalendar");
   const title = $("#scheduleTitle");
+  const monthPicker = $("#scheduleMonthPicker");
   schedule.className = `calendar schedule-${state.scheduleView}`;
   if (title) {
-    title.textContent = state.scheduleView === "month" ? "August 2026" : state.scheduleView === "list" ? "Schedule List" : "This Week";
+    title.textContent = state.scheduleView === "month" ? monthTitle(state.scheduleMonth) : state.scheduleView === "list" ? "Schedule List" : "This Week";
   }
+  if (monthPicker) {
+    monthPicker.value = state.scheduleMonth;
+    monthPicker.hidden = state.scheduleView !== "month";
+  }
+  updateScheduleRangeLabel();
   if (state.scheduleView === "month") {
     renderMonthSchedule(schedule);
   } else if (state.scheduleView === "list") {
@@ -788,16 +806,43 @@ function renderSchedule() {
   }
 }
 
+function currentWeekDays(baseDate = new Date()) {
+  const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+  const mondayOffset = (start.getDay() + 6) % 7;
+  start.setDate(start.getDate() - mondayOffset);
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return {
+      date: localDateValue(date),
+      label: date.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" }),
+    };
+  });
+}
+
+function monthTitle(monthValue) {
+  const [year, month] = String(monthValue || localDateValue(new Date()).slice(0, 7)).split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function updateScheduleRangeLabel() {
+  const label = $("#scheduleRangeLabel");
+  if (!label) return;
+  if (state.scheduleView === "month") {
+    label.textContent = monthTitle(state.scheduleMonth);
+    return;
+  }
+  const days = currentWeekDays();
+  label.textContent = `${shortRangeDate(days[0].date)} - ${formatDate(days[6].date)}`;
+}
+
+function shortRangeDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function renderWeekSchedule(container) {
-  const days = [
-    { label: "Mon 8/3", date: "2026-08-03" },
-    { label: "Tue 8/4", date: "2026-08-04" },
-    { label: "Wed 8/5", date: "2026-08-05" },
-    { label: "Thu 8/6", date: "2026-08-06" },
-    { label: "Fri 8/7", date: "2026-08-07" },
-    { label: "Sat 8/8", date: "2026-08-08" },
-    { label: "Sun 8/9", date: "2026-08-09" },
-  ];
+  const days = currentWeekDays();
   const scheduledEvents = scheduleEvents();
   const weekDates = days.map((day) => day.date);
   const hasEvents = scheduledEvents.some((event) => weekDates.includes(event.date));
@@ -806,17 +851,18 @@ function renderWeekSchedule(container) {
       const events = scheduledEvents.filter((event) => event.date === day.date);
       return `
         <div class="day">
-          <strong>${day.label}</strong>
+          <strong>${escapeHtml(day.label)}</strong>
           ${events.map(renderCalendarEvent).join("")}
         </div>
       `;
     })
-    .join("") + (hasEvents ? "" : `<div class="calendar-empty">No PM or work orders scheduled this week.</div>`);
+    .join("") + (hasEvents ? "" : `<div class="calendar-empty">No PM or tickets scheduled this week.</div>`);
 }
 
 function renderMonthSchedule(container) {
-  const daysInMonth = 31;
-  const firstWeekdayOffset = 6;
+  const [year, month] = state.scheduleMonth.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstWeekdayOffset = (new Date(year, month - 1, 1).getDay() + 6) % 7;
   const cells = [];
   const scheduledEvents = scheduleEvents();
   for (let i = 0; i < firstWeekdayOffset; i += 1) cells.push({ blank: true });
@@ -824,7 +870,8 @@ function renderMonthSchedule(container) {
   container.innerHTML = cells
     .map((cell) => {
       if (cell.blank) return `<div class="month-day muted-day"></div>`;
-      const events = scheduledEvents.filter((event) => Number(event.date.slice(-2)) === cell.day);
+      const date = `${state.scheduleMonth}-${String(cell.day).padStart(2, "0")}`;
+      const events = scheduledEvents.filter((event) => event.date === date);
       return `
         <div class="month-day">
           <strong>${cell.day}</strong>
@@ -838,7 +885,7 @@ function renderMonthSchedule(container) {
 function renderListSchedule(container) {
   const scheduledEvents = scheduleEvents();
   if (scheduledEvents.length === 0) {
-    container.innerHTML = `<div class="empty-state">No PM or work orders scheduled yet.</div>`;
+    container.innerHTML = `<div class="empty-state">No PM or tickets scheduled yet.</div>`;
     return;
   }
   container.innerHTML = `
@@ -874,7 +921,7 @@ function scheduleEvents() {
   const workOrderEvents = visibleWorkOrders()
     .filter((order) => order.status === "scheduled" && (order.scheduledDate || order.opened))
     .map((order) => ({
-      type: "WO",
+      type: "Ticket",
       date: order.scheduledDate || order.opened,
       machineId: order.machineId,
       machine: order.machine,
@@ -887,7 +934,7 @@ function scheduleEvents() {
 }
 
 function scheduledEventsForWeek() {
-  const weekDates = ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-09"];
+  const weekDates = currentWeekDays().map((day) => day.date);
   return scheduleEvents().filter((event) => weekDates.includes(event.date));
 }
 
@@ -908,11 +955,11 @@ function renderWorkOrders() {
     orders = orders.filter((order) => `${order.id} ${order.machine} ${order.issue}`.toLowerCase().includes(state.search));
   }
   if (orders.length === 0) {
-    $("#workOrdersTable").innerHTML = emptyTable(["Priority", "Work Order", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"], "No work orders yet.");
+    $("#workOrdersTable").innerHTML = emptyTable(["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"], "No tickets yet.");
     return;
   }
   $("#workOrdersTable").innerHTML = table(
-    ["Priority", "Work Order", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"],
+    ["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"],
     orders.map((order) => [
       `<span class="priority-chip priority-${order.priority}">${order.priority}</span>`,
       `${order.id}<br><span class="subtle">${formatDate(order.opened)}</span>`,
@@ -942,6 +989,7 @@ function renderWorkOrderActions(order) {
 function renderLogs() {
   if (!$("#allLogs")) return;
   const logs = [...state.localLogs, ...state.data.updates]
+    .filter((log) => !isImportedHistoryNote(log))
     .filter((log) => !state.search || `${log.machine} ${log.note} ${log.status}`.toLowerCase().includes(state.search))
     .slice(-220)
     .reverse();
@@ -1255,6 +1303,13 @@ function setSettingsSaveStatus(message = "", tone = "neutral") {
   target.dataset.tone = tone;
 }
 
+function setAssetSaveStatus(message = "", tone = "neutral") {
+  const target = $("#assetSaveStatus");
+  if (!target) return;
+  target.textContent = message;
+  target.dataset.tone = tone;
+}
+
 function settingsSaveErrorMessage(error) {
   const raw = String(error?.message || "Unknown error");
   const match = raw.match(/"error"\s*:\s*"([^"]+)"/);
@@ -1343,8 +1398,9 @@ function openWorkOrderForm(orderId = null) {
   panel.hidden = false;
   document.body.classList.add("modal-open");
   form.reset();
+  setAssetSaveStatus("");
   form.elements.id.value = "";
-  setText("#workOrderFormTitle", "Create Work Order");
+  setText("#workOrderFormTitle", "Create Ticket");
   if (form.elements.opened) form.elements.opened.value = new Date().toISOString().slice(0, 10);
   if (orderId) {
     const order = state.data.workOrders.find((item) => item.id === orderId);
@@ -1409,6 +1465,7 @@ function closeAssetForm() {
   const panel = $("#assetFormPanel");
   if (!form || !panel) return;
   form.reset();
+  setAssetSaveStatus("");
   setAssetImagePreview("");
   panel.hidden = true;
   document.body.classList.remove("modal-open");
@@ -1464,16 +1521,43 @@ function setupAssetImagePicker() {
   });
 }
 
-function handleAssetImageFile(file) {
+async function handleAssetImageFile(file) {
   const form = $("#assetForm");
   if (!form || !file.type.startsWith("image/")) return;
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    const imageUrl = String(reader.result || "");
+  setAssetSaveStatus("Preparing image...", "neutral");
+  try {
+    const imageUrl = await compressedImageDataUrl(file);
     form.elements.imageUrl.value = imageUrl;
     setAssetImagePreview(imageUrl);
+    setAssetSaveStatus("Image ready.", "success");
+  } catch (error) {
+    setAssetSaveStatus(`Could not use image: ${error.message || "unsupported file"}`, "error");
+  }
+}
+
+function compressedImageDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("error", () => reject(new Error("file could not be read")));
+    reader.addEventListener("load", () => {
+      const image = new Image();
+      image.addEventListener("error", () => reject(new Error("image could not be loaded")));
+      image.addEventListener("load", () => {
+        const maxSide = 900;
+        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      });
+      image.src = String(reader.result || "");
+    });
+    reader.readAsDataURL(file);
   });
-  reader.readAsDataURL(file);
 }
 
 function setAssetImagePreview(src) {
@@ -1511,6 +1595,7 @@ async function handleAssetSubmit(event) {
   event.preventDefault();
   if (!can("manageAssets")) return;
   const form = event.currentTarget;
+  setAssetSaveStatus("Saving asset...", "neutral");
   const data = new FormData(form);
   const existingId = String(data.get("id") || "");
   const id = existingId || uniqueMachineId(String(data.get("name")));
@@ -1533,17 +1618,25 @@ async function handleAssetSubmit(event) {
     imageUrl: String(data.get("imageUrl") || "").trim(),
   };
   const index = state.data.machines.findIndex((item) => item.id === id);
+  const previousMachines = [...state.data.machines];
+  const previousSelectedMachineId = state.selectedMachineId;
   if (index >= 0) {
     state.data.machines[index] = machine;
   } else {
     state.data.machines.push(machine);
   }
   state.selectedMachineId = id;
-  await persistAssets(machine);
-  hydrateFormOptions();
-  hydrateWorkOrderFormOptions();
-  closeAssetForm();
-  renderPage();
+  try {
+    await persistAssets(machine);
+    hydrateFormOptions();
+    hydrateWorkOrderFormOptions();
+    closeAssetForm();
+    renderPage();
+  } catch (error) {
+    state.data.machines = previousMachines;
+    state.selectedMachineId = previousSelectedMachineId;
+    setAssetSaveStatus(settingsSaveErrorMessage(error), "error");
+  }
 }
 
 async function handleWorkOrderSubmit(event) {
@@ -2162,6 +2255,10 @@ function renderTimelineItem(update) {
       <p>${escapeHtml(update.note || "")}</p>
     </div>
   `;
+}
+
+function isImportedHistoryNote(update) {
+  return /history\s+imported\s+from\s+excel/i.test(String(update?.note || ""));
 }
 
 function table(headers, rows) {

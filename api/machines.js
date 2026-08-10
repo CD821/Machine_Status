@@ -4,7 +4,7 @@ import { canWrite, forbidden, withUser } from "./_lib/auth.js";
 export default async function handler(request, response) {
   return withUser(request, response, async (user) => {
     if (request.method !== "POST") return jsonResponse(response, { error: "Method not allowed" }, 405);
-    if (!canWrite(user)) return forbidden(response);
+    if (!canWrite(user, "assets")) return forbidden(response);
     const machine = await readJson(request);
     await sql`
       insert into machines (
