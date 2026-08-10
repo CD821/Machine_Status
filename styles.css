@@ -1811,16 +1811,50 @@ table select {
   }
 
   .topbar {
-    align-items: stretch;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
     margin: 0 -16px 18px;
     padding: 14px 16px;
   }
 
-  .topbar-actions,
   .page-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .topbar .hamburger {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .topbar .search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin-top: 10px;
+  }
+
+  .topbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    align-items: center;
+    justify-content: end;
+    gap: 8px;
+  }
+
+  .account-menu-wrap {
+    order: 2;
+  }
+
+  .shop-user {
+    order: 1;
+    max-width: 120px;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .summary-row,
