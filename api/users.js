@@ -14,10 +14,14 @@ export default async function handler(request, response) {
         "Content-Type": "application/json",
       },
     });
-    if (!clerkResponse.ok) return jsonResponse(response, { users: [] });
+    if (!clerkResponse.ok) {
+      const message = await clerkResponse.text();
+      return jsonResponse(response, { users: [], error: `Clerk users API ${clerkResponse.status}: ${message}` }, 502);
+    }
 
     const payload = await clerkResponse.json();
-    const users = (payload.data || []).map((item) => {
+    const clerkUsers = Array.isArray(payload) ? payload : payload.data || [];
+    const users = clerkUsers.map((item) => {
       const email = item.email_addresses?.find((emailItem) => emailItem.id === item.primary_email_address_id)?.email_address || item.email_addresses?.[0]?.email_address || "";
       const name = [item.first_name, item.last_name].filter(Boolean).join(" ") || item.username || email || "User";
       return {
