@@ -3,6 +3,7 @@ import { jsonResponse } from "./db.js";
 
 const protectedWriteRoles = new Set(["admin", "supervisor"]);
 const logWriteRoles = new Set(["admin", "supervisor", "technician"]);
+const knownRoles = new Set(["admin", "supervisor", "technician", "viewer"]);
 
 function issuer() {
   return process.env.CLERK_ISSUER_URL || process.env.CLERK_JWT_ISSUER || "";
@@ -14,14 +15,52 @@ function jwksUrl() {
   return value ? `${value.replace(/\/$/, "")}/.well-known/jwks.json` : "";
 }
 
-function roleFromClaims(claims) {
-  const email = claims.email || claims.primary_email_address || "";
+function normalizeRole(value) {
+  const role = String(value || "").trim().toLowerCase();
+  return knownRoles.has(role) ? role : "";
+}
+
+function emailFromClaims(claims) {
+  return claims.email || claims.primary_email_address || claims.email_address || "";
+}
+
+function isAdminEmail(email) {
   const adminEmails = String(process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
-  if (email && adminEmails.includes(String(email).toLowerCase())) return "admin";
-  return claims.role || claims.public_metadata?.role || claims.metadata?.role || process.env.DEFAULT_SIGNED_IN_ROLE || "admin";
+  return Boolean(email && adminEmails.includes(String(email).toLowerCase()));
+}
+
+function roleFromClaims(claims) {
+  if (isAdminEmail(emailFromClaims(claims))) return "admin";
+  return normalizeRole(
+    claims.role ||
+      claims.public_metadata?.role ||
+      claims.private_metadata?.role ||
+      claims.unsafe_metadata?.role ||
+      claims.metadata?.role,
+  );
+}
+
+async function roleFromClerkUser(userId) {
+  const secret = process.env.CLERK_SECRET_KEY;
+  if (!secret || !userId) return "";
+  const response = await fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(userId)}`, {
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) return "";
+  const user = await response.json();
+  const email = user.email_addresses?.find((item) => item.id === user.primary_email_address_id)?.email_address || user.email_addresses?.[0]?.email_address || "";
+  if (isAdminEmail(email)) return "admin";
+  return normalizeRole(user.public_metadata?.role || user.private_metadata?.role || user.unsafe_metadata?.role);
+}
+
+async function roleForUser(claims) {
+  return roleFromClaims(claims) || (await roleFromClerkUser(claims.sub)) || normalizeRole(process.env.DEFAULT_SIGNED_IN_ROLE) || "viewer";
 }
 
 export async function requireUser(request) {
@@ -38,7 +77,7 @@ export async function requireUser(request) {
 
   return {
     id: payload.sub,
-    role: roleFromClaims(payload),
+    role: await roleForUser(payload),
     claims: payload,
   };
 }
