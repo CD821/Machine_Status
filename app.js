@@ -6,6 +6,12 @@ const state = {
   selectedMachineId: new URLSearchParams(location.search).get("machine") || "saber-jet-xp",
   orderFilter: "all",
   scheduleView: "week",
+  scheduleFilters: {
+    machineId: "all",
+    technician: "all",
+    status: "all",
+    priority: "all",
+  },
   search: "",
   localLogs: JSON.parse(localStorage.getItem("tts-maintenance-local-logs") || "[]"),
   machineOverrides: JSON.parse(localStorage.getItem("tts-machine-overrides") || "{}"),
@@ -92,6 +98,7 @@ const machineImages = {
   "saber-jet-2-crane": "./assets/machines/saber-jet-crane.png",
   "overhead-crane": "./assets/machines/overhead-crane.png",
   forklift: "./assets/machines/forklift.png",
+  "power-grip": "./assets/machines/Power Grip.jpg",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -138,6 +145,7 @@ async function init() {
   bindSharedEvents();
   hydrateSidebarCounts();
   hydrateFormOptions();
+  hydrateScheduleFilters();
   renderPage();
   applyRolePreview();
   exposeDebugHelpers();
@@ -184,6 +192,14 @@ function bindSharedEvents() {
       renderSchedule();
     });
   }
+
+  $$("[data-schedule-filter]").forEach((select) => {
+    select.addEventListener("change", () => {
+      state.scheduleFilters[select.dataset.scheduleFilter] = select.value || "all";
+      renderSchedule();
+      renderWorkOrders();
+    });
+  });
 
   $$("[data-machine-tab]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -555,6 +571,44 @@ function hydrateFormOptions() {
   $("#formMachine").value = state.selectedMachineId;
 }
 
+function hydrateScheduleFilters() {
+  const machineFilter = $("#scheduleMachineFilter");
+  const technicianFilter = $("#scheduleTechnicianFilter");
+  const statusFilter = $("#scheduleStatusFilter");
+  const priorityFilter = $("#schedulePriorityFilter");
+  if (!machineFilter && !technicianFilter && !statusFilter && !priorityFilter) return;
+
+  if (machineFilter) {
+    machineFilter.innerHTML = `<option value="all">All Machines</option>${state.data.machines
+      .map((machine) => `<option value="${escapeHtml(machine.id)}">${escapeHtml(machine.name)}</option>`)
+      .join("")}`;
+    machineFilter.value = state.scheduleFilters.machineId;
+  }
+  if (technicianFilter) {
+    technicianFilter.innerHTML = `<option value="all">All Technicians</option>${state.data.technicians
+      .map((tech) => `<option value="${escapeHtml(tech)}">${escapeHtml(tech)}</option>`)
+      .join("")}`;
+    technicianFilter.value = state.scheduleFilters.technician;
+  }
+  if (statusFilter) {
+    const statuses = ["open", "scheduled", "completed", "overdue", "due-soon", "maintenance"];
+    statusFilter.innerHTML = `<option value="all">All Statuses</option>${statuses
+      .map((status) => `<option value="${status}">${escapeHtml(statusLabels[status] || status)}</option>`)
+      .join("")}`;
+    statusFilter.value = state.scheduleFilters.status;
+  }
+  if (priorityFilter) {
+    priorityFilter.innerHTML = `
+      <option value="all">All Priorities</option>
+      <option value="urgent">Urgent</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    `;
+    priorityFilter.value = state.scheduleFilters.priority;
+  }
+}
+
 function renderSummary() {
   const counts = state.data.machines.reduce(
     (acc, machine) => {
@@ -777,12 +831,13 @@ function renderMachinePm() {
 }
 
 function setMachineTab(tabName) {
+  const requestedTab = $(`[data-machine-tab="${CSS.escape(tabName)}"]`) ? tabName : "overview";
   $$("[data-machine-tab]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.machineTab === tabName);
+    button.classList.toggle("active", button.dataset.machineTab === requestedTab);
   });
   $$("[data-tab-panel]").forEach((panel) => {
     const tabs = panel.dataset.tabPanel.split(" ");
-    panel.classList.toggle("hidden-panel", !tabs.includes(tabName));
+    panel.classList.toggle("hidden-panel", !tabs.includes(requestedTab));
   });
 }
 
@@ -990,6 +1045,8 @@ function scheduleEvents() {
     title: pm.task,
     technician: pm.technician,
     status: pm.status,
+    sourceStatus: pm.status,
+    priority: "",
     href: `./machines.html?machine=${encodeURIComponent(pm.machineId)}`,
   }));
   const workOrderEvents = visibleWorkOrders()
@@ -1002,9 +1059,42 @@ function scheduleEvents() {
       title: `${order.id}: ${order.issue}`,
       technician: order.technician,
       status: order.priority === "urgent" || order.priority === "high" ? "overdue" : "scheduled",
+      sourceStatus: order.status,
+      priority: order.priority,
       href: `./workorders.html?edit=${encodeURIComponent(order.id)}`,
     }));
-  return [...pmEvents, ...workOrderEvents].sort((a, b) => a.date.localeCompare(b.date));
+  return applyScheduleDateRange(applyScheduleFilters([...pmEvents, ...workOrderEvents])).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function applyScheduleFilters(events) {
+  const filters = state.scheduleFilters;
+  return events.filter((event) => {
+    if (filters.machineId !== "all" && event.machineId !== filters.machineId) return false;
+    if (filters.technician !== "all" && event.technician !== filters.technician) return false;
+    if (filters.status !== "all" && event.status !== filters.status && event.sourceStatus !== filters.status) return false;
+    if (filters.priority !== "all" && event.priority !== filters.priority) return false;
+    return true;
+  });
+}
+
+function applyScheduleDateRange(events) {
+  if (state.page !== "schedule") return events;
+  const range = currentScheduleRange();
+  if (!range) return events;
+  return events.filter((event) => event.date >= range.start && event.date <= range.end);
+}
+
+function currentScheduleRange() {
+  if (state.scheduleView === "month") {
+    const [year, month] = state.scheduleMonth.split("-").map(Number);
+    if (!year || !month) return null;
+    return {
+      start: `${state.scheduleMonth}-01`,
+      end: `${state.scheduleMonth}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`,
+    };
+  }
+  const days = currentWeekDays();
+  return { start: days[0].date, end: days[6].date };
 }
 
 function scheduledEventsForWeek() {
@@ -1025,6 +1115,9 @@ function renderCalendarEvent(event) {
 function renderWorkOrders() {
   if (!$("#workOrdersTable")) return;
   let orders = visibleWorkOrders().filter((order) => state.orderFilter === "all" || order.status === state.orderFilter);
+  if (state.page === "schedule") {
+    orders = applyScheduleFiltersToWorkOrders(orders);
+  }
   if (state.search) {
     orders = orders.filter((order) => `${order.id} ${order.machine} ${order.issue}`.toLowerCase().includes(state.search));
   }
@@ -1045,6 +1138,25 @@ function renderWorkOrders() {
       renderWorkOrderActions(order),
     ]),
   );
+}
+
+function applyScheduleFiltersToWorkOrders(orders) {
+  const filters = state.scheduleFilters;
+  const range = currentScheduleRange();
+  return orders.filter((order) => {
+    const date = order.scheduledDate || order.opened;
+    const displayStatus = scheduleOrderDisplayStatus(order);
+    if (range && (!date || date < range.start || date > range.end)) return false;
+    if (filters.machineId !== "all" && order.machineId !== filters.machineId) return false;
+    if (filters.technician !== "all" && order.technician !== filters.technician) return false;
+    if (filters.status !== "all" && order.status !== filters.status && displayStatus !== filters.status) return false;
+    if (filters.priority !== "all" && order.priority !== filters.priority) return false;
+    return true;
+  });
+}
+
+function scheduleOrderDisplayStatus(order) {
+  return order.priority === "urgent" || order.priority === "high" ? "overdue" : order.status;
 }
 
 function renderWorkOrderActions(order) {
@@ -1103,14 +1215,28 @@ async function handleLogSubmit(event) {
   updateMachineStatus(machine.id, status, log.note, eventDate);
   await saveRemoteLog(log, machine);
   state.selectedMachineId = machine.id;
+  const savedMessage = action === "log" ? "Maintenance note recorded." : `Machine marked ${statusLabels[status] || status}. Log recorded.`;
   setText("#saveState", state.remoteEnabled ? "Saved" : "Saved locally");
-  setTimeout(() => setText("#saveState", "Ready"), 2200);
   formElement.reset();
   closeLogForm();
+  showPageToast(savedMessage, "success");
   hydrateFormOptions();
   renderMachineDetail();
   renderMachineIssues();
   renderMachinePm();
+}
+
+function showPageToast(message, tone = "success") {
+  const toast = $("#pageToast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.dataset.tone = tone;
+  toast.hidden = false;
+  window.clearTimeout(showPageToast.timer);
+  showPageToast.timer = window.setTimeout(() => {
+    toast.hidden = true;
+    toast.textContent = "";
+  }, 3200);
 }
 
 function hydrateRecurringFormOptions() {
@@ -2375,6 +2501,9 @@ function machineImageSrc(machine) {
   const text = `${machine.name || ""} ${machine.category || ""} ${machine.model || ""}`.toLowerCase();
   if (text.includes("forklift") || text.includes("fork lift") || text.includes("toyota lp") || text.includes("8fgu") || text.includes("25lc")) {
     return machineImages.forklift;
+  }
+  if (text.includes("power grip")) {
+    return machineImages["power-grip"];
   }
   return "";
 }

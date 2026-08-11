@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PM Schedule | TTS Maintenance</title>
     <meta name="description" content="Preventive maintenance calendar and due-by-hours planning." />
-    <link rel="stylesheet" href="./styles.css?v=20260811-drag-cards" />
+    <link rel="stylesheet" href="./styles.css?v=20260811-log-toast" />
   </head>
   <body data-page="schedule">
     <div class="app-shell">
@@ -27,10 +27,10 @@
       <main class="main">
         <header class="topbar filters-bar">
           <button class="hamburger" type="button" aria-label="Toggle menu">☰</button>
-          <select id="categoryFilter" aria-label="Filter machine"><option value="all">All Machines</option></select>
-          <select aria-label="Filter technician"><option>All Technicians</option></select>
-          <select aria-label="Filter status"><option>All Statuses</option></select>
-          <select aria-label="Filter priority"><option>All Priorities</option></select>
+          <select id="scheduleMachineFilter" data-schedule-filter="machineId" aria-label="Filter machine"><option value="all">All Machines</option></select>
+          <select id="scheduleTechnicianFilter" data-schedule-filter="technician" aria-label="Filter technician"><option value="all">All Technicians</option></select>
+          <select id="scheduleStatusFilter" data-schedule-filter="status" aria-label="Filter status"><option value="all">All Statuses</option></select>
+          <select id="schedulePriorityFilter" data-schedule-filter="priority" aria-label="Filter priority"><option value="all">All Priorities</option></select>
           <span class="control-pill" id="scheduleRangeLabel">This week</span>
         </header>
         <div class="page-heading">
@@ -80,6 +80,6 @@
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260811-drag-cards"></script>
+    <script type="module" src="./app.js?v=20260811-log-toast"></script>
   </body>
 </html>
