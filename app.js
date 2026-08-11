@@ -104,6 +104,7 @@ const machineImages = {
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const logStatusKeys = ["operational", "maintenance", "down", "urgent"];
+const maintenanceLogStatusKeys = ["operational", "down", "inactive"];
 const workOrderStatusKeys = ["open", "scheduled", "completed"];
 const shiftStartHour = 5;
 const shiftEndHour = 18;
@@ -566,7 +567,7 @@ function hydrateFormOptions() {
     .join("");
   const logStatus = $("#logStatus");
   if (logStatus) {
-    logStatus.innerHTML = statusOptionsHtml();
+    logStatus.innerHTML = statusOptionsHtml(maintenanceLogStatusKeys);
   }
   $("#formMachine").value = state.selectedMachineId;
 }
@@ -1142,11 +1143,8 @@ function renderWorkOrders() {
 
 function applyScheduleFiltersToWorkOrders(orders) {
   const filters = state.scheduleFilters;
-  const range = currentScheduleRange();
   return orders.filter((order) => {
-    const date = order.scheduledDate || order.opened;
     const displayStatus = scheduleOrderDisplayStatus(order);
-    if (range && (!date || date < range.start || date > range.end)) return false;
     if (filters.machineId !== "all" && order.machineId !== filters.machineId) return false;
     if (filters.technician !== "all" && order.technician !== filters.technician) return false;
     if (filters.status !== "all" && order.status !== filters.status && displayStatus !== filters.status) return false;
@@ -2157,9 +2155,10 @@ function settingTitle(group) {
   return "technician";
 }
 
-function statusOptionsHtml() {
-  return Object.entries(statusLabels)
-    .map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`)
+function statusOptionsHtml(keys = Object.keys(statusLabels)) {
+  return keys
+    .filter((key) => statusLabels[key])
+    .map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(statusLabels[key])}</option>`)
     .join("");
 }
 
