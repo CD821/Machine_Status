@@ -12,6 +12,10 @@ const state = {
   workOrderOverrides: JSON.parse(localStorage.getItem("tts-work-order-overrides") || "{}"),
   settingsOverrides: JSON.parse(localStorage.getItem("tts-settings") || "{}"),
   savedAssets: JSON.parse(localStorage.getItem("tts-assets") || "null"),
+  machineCardOrder: JSON.parse(localStorage.getItem("tts-machine-card-order") || "[]"),
+  draggedMachineId: "",
+  machineCardDragStarted: false,
+  machineCardClickGuard: false,
   pmSchedule: null,
   remoteEnabled: false,
   actualRole: "admin",
@@ -255,6 +259,12 @@ function bindSharedEvents() {
   }
 
   document.addEventListener("click", (event) => {
+    const machineCard = event.target.closest("[data-machine-card]");
+    if (machineCard && state.machineCardClickGuard) {
+      event.preventDefault();
+      state.machineCardClickGuard = false;
+      return;
+    }
     if (event.target.matches(".modal-backdrop")) {
       closeWorkOrderForm();
       closeAssetForm();
@@ -321,6 +331,50 @@ function bindSharedEvents() {
       accountMenu.hidden = true;
       $("[data-account-button]")?.setAttribute("aria-expanded", "false");
     }
+  });
+
+  document.addEventListener("dragstart", (event) => {
+    const card = event.target.closest("[data-machine-card]");
+    if (!card) return;
+    state.draggedMachineId = card.dataset.machineCard;
+    state.machineCardDragStarted = true;
+    card.classList.add("dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", state.draggedMachineId);
+  });
+
+  document.addEventListener("dragover", (event) => {
+    const card = event.target.closest("[data-machine-card]");
+    if (!card || !state.draggedMachineId || card.dataset.machineCard === state.draggedMachineId) return;
+    event.preventDefault();
+    card.classList.add("drag-over");
+    event.dataTransfer.dropEffect = "move";
+  });
+
+  document.addEventListener("dragleave", (event) => {
+    const card = event.target.closest("[data-machine-card]");
+    if (card) card.classList.remove("drag-over");
+  });
+
+  document.addEventListener("drop", (event) => {
+    const card = event.target.closest("[data-machine-card]");
+    if (!card || !state.draggedMachineId || card.dataset.machineCard === state.draggedMachineId) return;
+    event.preventDefault();
+    reorderMachineCards(state.draggedMachineId, card.dataset.machineCard);
+  });
+
+  document.addEventListener("dragend", () => {
+    if (state.machineCardDragStarted) {
+      state.machineCardClickGuard = true;
+      window.setTimeout(() => {
+        state.machineCardClickGuard = false;
+      }, 0);
+    }
+    state.draggedMachineId = "";
+    state.machineCardDragStarted = false;
+    $$(".machine-card.dragging, .machine-card.drag-over").forEach((card) => {
+      card.classList.remove("dragging", "drag-over");
+    });
   });
 
   document.addEventListener("keydown", (event) => {
@@ -539,7 +593,7 @@ function renderSummary() {
 }
 
 function renderMachineGrid() {
-  const machines = state.data.machines.filter((machine) => {
+  const machines = orderedMachines(state.data.machines).filter((machine) => {
     const term = state.search;
     return !term || `${machine.name} ${machine.location} ${machine.latestNote}`.toLowerCase().includes(term);
   });
@@ -548,7 +602,7 @@ function renderMachineGrid() {
       const status = normalizeStatus(machine.currentStatus);
       const downtime = downtimeToday(machine);
       return `
-        <a class="machine-card status-${status}" href="./machines.html?machine=${encodeURIComponent(machine.id)}" aria-label="Open ${escapeHtml(machine.name)} detail">
+        <a class="machine-card status-${status}" href="./machines.html?machine=${encodeURIComponent(machine.id)}" aria-label="Open ${escapeHtml(machine.name)} detail" draggable="true" data-machine-card="${escapeHtml(machine.id)}">
           <div class="machine-top">
             <span class="round-status status-${status}">${status === "down" ? "×" : status === "maintenance" ? "◷" : "✓"}</span>
             ${machineArt(machine)}
@@ -566,6 +620,26 @@ function renderMachineGrid() {
       `;
     })
     .join("");
+}
+
+function orderedMachines(machines) {
+  const savedIds = state.machineCardOrder.filter((id) => machines.some((machine) => machine.id === id));
+  const missingIds = machines.map((machine) => machine.id).filter((id) => !savedIds.includes(id));
+  const order = [...savedIds, ...missingIds];
+  const orderIndex = new Map(order.map((id, index) => [id, index]));
+  return [...machines].sort((a, b) => (orderIndex.get(a.id) ?? 9999) - (orderIndex.get(b.id) ?? 9999));
+}
+
+function reorderMachineCards(sourceId, targetId) {
+  if (!sourceId || !targetId || sourceId === targetId) return;
+  const currentOrder = orderedMachines(state.data.machines).map((machine) => machine.id);
+  const fromIndex = currentOrder.indexOf(sourceId);
+  const toIndex = currentOrder.indexOf(targetId);
+  if (fromIndex < 0 || toIndex < 0) return;
+  currentOrder.splice(toIndex, 0, currentOrder.splice(fromIndex, 1)[0]);
+  state.machineCardOrder = currentOrder;
+  localStorage.setItem("tts-machine-card-order", JSON.stringify(currentOrder));
+  renderMachineGrid();
 }
 
 function renderRightRail() {
