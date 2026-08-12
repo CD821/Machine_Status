@@ -291,6 +291,10 @@ function bindSharedEvents() {
     if (closeButton) {
       closeWorkOrder(closeButton.dataset.closeOrder);
     }
+    const emptyCreateButton = event.target.closest("#emptyCreateWorkOrder");
+    if (emptyCreateButton) {
+      openWorkOrderForm();
+    }
     const editPmButton = event.target.closest("[data-edit-pm]");
     if (editPmButton) {
       openRecurringForm(editPmButton.dataset.editPm);
@@ -1149,14 +1153,16 @@ function renderWorkOrders() {
     orders = orders.filter((order) => `${order.id} ${order.machine} ${order.issue}`.toLowerCase().includes(state.search));
   }
   if (orders.length === 0) {
-    $("#workOrdersTable").innerHTML = emptyTable(["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"], "No tickets yet.");
+    $("#workOrdersTable").innerHTML = state.page === "workorders"
+      ? emptyTicketsTable()
+      : emptyTable(["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"], "No tickets yet.");
     return;
   }
   $("#workOrdersTable").innerHTML = table(
     ["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"],
     orders.map((order) => [
       `<span class="priority-chip priority-${order.priority}">${order.priority}</span>`,
-      `${order.id}<br><span class="subtle">${formatDate(order.opened)}</span>`,
+      `<span class="ticket-id">${escapeHtml(order.id)}</span><span class="ticket-date">${formatDate(order.opened)}</span>`,
       linkMachine(order.machineId, order.machine),
       order.issue,
       `<select aria-label="Assign technician for ${order.id}">${state.data.technicians.map((tech) => `<option ${tech === order.technician ? "selected" : ""}>${escapeHtml(tech)}</option>`).join("")}</select>`,
@@ -1165,6 +1171,24 @@ function renderWorkOrders() {
       renderWorkOrderActions(order),
     ]),
   );
+}
+
+function emptyTicketsTable() {
+  const headers = ["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"];
+  return `
+    <thead><tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead>
+    <tbody>
+      <tr>
+        <td colspan="${headers.length}">
+          <div class="tickets-empty">
+            <strong>No tickets found</strong>
+            <p>There aren't any tickets in this category yet.</p>
+            <button class="primary-action" id="emptyCreateWorkOrder" data-permission="manageWorkOrders" type="button">+ New Ticket</button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  `;
 }
 
 function applyScheduleFiltersToWorkOrders(orders) {
@@ -1185,13 +1209,20 @@ function scheduleOrderDisplayStatus(order) {
 
 function renderWorkOrderActions(order) {
   const closeAction = order.status === "completed"
-    ? `<span class="subtle">Closed ${formatDate(order.completedAt)}</span>`
-    : `<button class="outline-button close-order" data-close-order="${escapeHtml(order.id)}" data-permission="closeWorkOrders" type="button">Close</button>`;
+    ? `<span class="ticket-closed">Closed ${formatDate(order.completedAt)}</span>`
+    : `<button data-close-order="${escapeHtml(order.id)}" data-permission="closeWorkOrders" type="button">Close Ticket</button>`;
   return `
-    <div class="row-actions">
-      <button class="outline-button" data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit</button>
-      ${closeAction}
-      <button class="danger-action" data-delete-order="${escapeHtml(order.id)}" data-permission="deleteWorkOrders" type="button">Delete</button>
+    <div class="row-actions ticket-actions">
+      <button class="ticket-edit-action" data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit</button>
+      <details class="ticket-action-menu">
+        <summary aria-label="More actions for ${escapeHtml(order.id)}">•••</summary>
+        <div class="ticket-menu-popover">
+          <button data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit Ticket</button>
+          ${closeAction}
+          <hr />
+          <button class="danger-menu-item" data-delete-order="${escapeHtml(order.id)}" data-permission="deleteWorkOrders" type="button">Delete Ticket</button>
+        </div>
+      </details>
     </div>
   `;
 }

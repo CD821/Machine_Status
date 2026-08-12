@@ -2379,3 +2379,468 @@ tr:hover td {
   background: #3557ff;
   color: #fff;
 }
+
+/* Native Apple/macOS treatment for the Tickets dashboard */
+body[data-page="workorders"] {
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --primary-text: #1d1d1f;
+  --secondary-text: #6e6e73;
+  --tertiary-text: #86868b;
+  --border: rgba(0, 0, 0, 0.08);
+  --apple-blue: #007aff;
+  --apple-red: #ff3b30;
+  --apple-green: #34c759;
+  --apple-orange: #ff9500;
+  background: var(--background);
+  color: var(--primary-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+body[data-page="workorders"] .app-shell {
+  grid-template-columns: 246px minmax(0, 1fr);
+}
+
+body[data-page="workorders"] .sidebar {
+  background: rgba(246, 246, 246, 0.88);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: none;
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .nav-list {
+  gap: 6px;
+}
+
+body[data-page="workorders"] .nav-item {
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--primary-text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+body[data-page="workorders"] .nav-item:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+
+body[data-page="workorders"] .nav-item.active {
+  background: rgba(0, 0, 0, 0.07);
+  box-shadow: none;
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .icon {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(0, 0, 0, 0.12);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--secondary-text);
+  font-size: 13px;
+}
+
+body[data-page="workorders"] .sidebar-card {
+  border-color: rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+body[data-page="workorders"] .sidebar-card span,
+body[data-page="workorders"] .mini-legend span {
+  color: var(--secondary-text);
+}
+
+body[data-page="workorders"] .sidebar-card strong {
+  color: var(--apple-blue);
+  font-weight: 700;
+}
+
+body[data-page="workorders"] .main {
+  padding: 0 28px 48px;
+}
+
+body[data-page="workorders"] .topbar {
+  min-height: 68px;
+  margin: 0 -28px;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+body[data-page="workorders"] .hamburger {
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .search {
+  width: min(560px, 48vw);
+}
+
+body[data-page="workorders"] .search input {
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(118, 118, 128, 0.08);
+  box-shadow: none;
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .search input::placeholder {
+  color: var(--tertiary-text);
+}
+
+body[data-page="workorders"] .search::after {
+  color: var(--secondary-text);
+}
+
+body[data-page="workorders"] .topbar-actions {
+  gap: 8px;
+}
+
+body[data-page="workorders"] .user-dot {
+  width: 34px;
+  height: 34px;
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--apple-blue);
+}
+
+body[data-page="workorders"] .user-dot.account-button {
+  background: var(--apple-blue);
+  color: #fff;
+}
+
+body[data-page="workorders"] .shop-user {
+  color: var(--secondary-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body[data-page="workorders"] .page-heading {
+  align-items: end;
+  margin: 34px 0 22px;
+}
+
+body[data-page="workorders"] .page-heading h1 {
+  margin: 0;
+  color: var(--primary-text);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="workorders"] .page-heading p {
+  margin: 5px 0 0;
+  color: var(--secondary-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body[data-page="workorders"] .primary-action {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--apple-blue);
+  box-shadow: none;
+  color: #fff;
+  font-weight: 600;
+}
+
+body[data-page="workorders"] .primary-action:hover {
+  background: #006edc;
+  box-shadow: none;
+  transform: none;
+}
+
+body[data-page="workorders"] .tickets-panel {
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+body[data-page="workorders"] .tabs {
+  display: inline-flex;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+body[data-page="workorders"] .tabs button {
+  min-width: 94px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #3a3a3c;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+}
+
+body[data-page="workorders"] .tabs button.active {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .table-wrap {
+  border-radius: 12px;
+}
+
+body[data-page="workorders"] table {
+  min-width: 980px;
+}
+
+body[data-page="workorders"] th {
+  padding: 12px 10px;
+  color: var(--tertiary-text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+body[data-page="workorders"] td {
+  height: 68px;
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--primary-text);
+  font-size: 13px;
+}
+
+body[data-page="workorders"] tr:hover td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+body[data-page="workorders"] .ticket-id,
+body[data-page="workorders"] .ticket-date {
+  display: block;
+}
+
+body[data-page="workorders"] .ticket-id {
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+body[data-page="workorders"] .ticket-date {
+  margin-top: 2px;
+  color: var(--tertiary-text);
+  font-size: 12px;
+}
+
+body[data-page="workorders"] .table-link {
+  color: var(--apple-blue);
+  font-weight: 500;
+}
+
+body[data-page="workorders"] .priority-chip,
+body[data-page="workorders"] .status-chip {
+  min-height: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+body[data-page="workorders"] .priority-medium {
+  background: rgba(255, 149, 0, 0.12);
+  color: #b56700;
+}
+
+body[data-page="workorders"] .priority-high,
+body[data-page="workorders"] .priority-urgent {
+  background: rgba(255, 59, 48, 0.1);
+  color: #d70015;
+}
+
+body[data-page="workorders"] .priority-low {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+}
+
+body[data-page="workorders"] .status-scheduled {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--apple-blue);
+}
+
+body[data-page="workorders"] .status-open {
+  background: rgba(255, 149, 0, 0.12);
+  color: #b56700;
+}
+
+body[data-page="workorders"] .status-completed {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+}
+
+body[data-page="workorders"] table select {
+  width: 128px;
+  max-width: 128px;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: none;
+  color: var(--primary-text);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+body[data-page="workorders"] table select:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+  outline: none;
+}
+
+body[data-page="workorders"] .ticket-actions {
+  position: relative;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+body[data-page="workorders"] .ticket-edit-action,
+body[data-page="workorders"] .ticket-action-menu button {
+  border: 0;
+  background: transparent;
+  color: var(--apple-blue);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body[data-page="workorders"] .ticket-edit-action:hover,
+body[data-page="workorders"] .ticket-action-menu button:hover {
+  color: #005ecb;
+}
+
+body[data-page="workorders"] .ticket-action-menu {
+  position: relative;
+}
+
+body[data-page="workorders"] .ticket-action-menu summary {
+  display: grid;
+  width: 32px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--secondary-text);
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 150ms ease;
+}
+
+body[data-page="workorders"] .ticket-action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+body[data-page="workorders"] .ticket-action-menu summary:hover,
+body[data-page="workorders"] .ticket-action-menu[open] summary {
+  background: rgba(118, 118, 128, 0.12);
+}
+
+body[data-page="workorders"] .ticket-menu-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  display: grid;
+  min-width: 168px;
+  padding: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+body[data-page="workorders"] .ticket-menu-popover button,
+body[data-page="workorders"] .ticket-closed {
+  width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--primary-text);
+  text-align: left;
+}
+
+body[data-page="workorders"] .ticket-menu-popover button:hover {
+  background: rgba(0, 0, 0, 0.045);
+  color: var(--primary-text);
+}
+
+body[data-page="workorders"] .ticket-menu-popover .danger-menu-item {
+  color: var(--apple-red);
+}
+
+body[data-page="workorders"] .ticket-menu-popover .danger-menu-item:hover {
+  color: var(--apple-red);
+}
+
+body[data-page="workorders"] .ticket-menu-popover hr {
+  width: 100%;
+  height: 1px;
+  margin: 5px 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+body[data-page="workorders"] .ticket-closed {
+  display: flex;
+  align-items: center;
+  color: var(--tertiary-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+body[data-page="workorders"] .tickets-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 54px 20px;
+  text-align: center;
+}
+
+body[data-page="workorders"] .tickets-empty strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+body[data-page="workorders"] .tickets-empty p {
+  margin: 0 0 6px;
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  body[data-page="workorders"] .main {
+    padding: 0 16px 32px;
+  }
+
+  body[data-page="workorders"] .topbar {
+    margin: 0 -16px;
+    padding: 12px 16px;
+  }
+
+  body[data-page="workorders"] .search {
+    width: 100%;
+  }
+
+  body[data-page="workorders"] .page-heading {
+    align-items: start;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  body[data-page="workorders"] .tickets-panel {
+    padding: 14px;
+  }
+}

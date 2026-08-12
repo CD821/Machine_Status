@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tickets | TTS Maintenance</title>
     <meta name="description" content="Equipment repair ticket queue." />
-    <link rel="stylesheet" href="./styles.css?v=20260812-machine-schedule" />
+    <link rel="stylesheet" href="./styles.css?v=20260812-tickets-apple" />
   </head>
   <body data-page="workorders">
     <div class="app-shell">
@@ -35,8 +35,11 @@
           <div class="topbar-actions"><span class="user-dot">U</span><span class="shop-user">Shop User</span></div>
         </header>
         <div class="page-heading">
-          <h1>Tickets</h1>
-          <button class="primary-action" id="createWorkOrder" data-permission="manageWorkOrders" type="button">Create Ticket</button>
+          <div>
+            <h1>Tickets</h1>
+            <p>Manage maintenance requests and work orders</p>
+          </div>
+          <button class="primary-action" id="createWorkOrder" data-permission="manageWorkOrders" type="button">+ New Ticket</button>
         </div>
         <div class="modal-backdrop" id="workOrderFormPanel" hidden>
           <section class="panel work-order-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="workOrderFormTitle">
@@ -60,7 +63,7 @@
             </form>
           </section>
         </div>
-        <section class="panel">
+        <section class="panel tickets-panel">
           <div class="tabs" role="tablist">
             <button class="active" data-order-filter="all" type="button">All</button>
             <button data-order-filter="open" type="button">Open</button>
@@ -72,6 +75,6 @@
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260812-machine-schedule"></script>
+    <script type="module" src="./app.js?v=20260812-tickets-apple"></script>
   </body>
 </html>
