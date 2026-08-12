@@ -810,25 +810,51 @@ function renderMachinePm() {
   if (!$("#machinePmTable")) return;
   const machine = selectedMachine();
   if (!machine) {
-    $("#machinePmTable").innerHTML = `<tbody><tr><td>No PM schedule is set yet.</td></tr></tbody>`;
+    $("#machinePmTable").innerHTML = `<tbody><tr><td>No schedule is set yet.</td></tr></tbody>`;
     return;
   }
-  const rows = pmWithLogDueDates().filter((pm) => pm.machineId === machine.id);
+  const pmRows = pmWithLogDueDates()
+    .filter((pm) => pm.machineId === machine.id)
+    .map((pm) => ({
+      type: "PM",
+      title: pm.task,
+      date: pm.dueDate,
+      dueIn: formatDueInDays(pm.dueInDays),
+      assignedTo: pm.technician,
+      status: pm.status,
+      action: "",
+      sortDate: pm.dueDate,
+    }));
+  const ticketRows = visibleWorkOrders()
+    .filter((order) => order.machineId === machine.id && order.status === "scheduled" && (order.scheduledDate || order.opened))
+    .map((order) => {
+      const date = order.scheduledDate || order.opened;
+      return {
+        type: "Ticket",
+        title: `${order.id}: ${order.issue}`,
+        date,
+        dueIn: formatDueInDays(daysUntil(date)),
+        assignedTo: order.technician,
+        status: scheduleOrderDisplayStatus(order),
+        action: `<button class="outline-button" data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit</button>`,
+        sortDate: date,
+      };
+    });
+  const rows = [...pmRows, ...ticketRows].sort((a, b) => a.sortDate.localeCompare(b.sortDate));
   $("#machinePmTable").innerHTML = rows.length
     ? table(
-        ["PM Task", "Last Completed", "Frequency", "Next Due", "Due In", "Assigned To", "Status", "Action"],
-        rows.map((pm) => [
-          pm.task,
-          pm.lastCompleted ? formatDate(pm.lastCompleted) : "No matching log",
-          pm.frequency,
-          formatDate(pm.dueDate),
-          formatDueInDays(pm.dueInDays),
-          pm.technician,
-          `<span class="status-chip status-${pm.status}">${statusLabels[pm.status]}</span>`,
-          `<button class="outline-button" data-permission="schedulePm" type="button">Schedule</button>`,
+        ["Type", "Task / Ticket", "Date", "Due In", "Assigned To", "Status", "Actions"],
+        rows.map((row) => [
+          row.type,
+          row.title,
+          formatDate(row.date),
+          row.dueIn,
+          row.assignedTo,
+          `<span class="status-chip status-${row.status}">${statusLabels[row.status] || row.status}</span>`,
+          row.action,
         ]),
       )
-    : `<tbody><tr><td>No PM schedule is set for ${escapeHtml(machine.name)} yet.</td></tr></tbody>`;
+    : `<tbody><tr><td>No PM or tickets are scheduled for ${escapeHtml(machine.name)} yet.</td></tr></tbody>`;
 }
 
 function setMachineTab(tabName) {
