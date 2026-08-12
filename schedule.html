@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PM Schedule | TTS Maintenance</title>
     <meta name="description" content="Preventive maintenance calendar and due-by-hours planning." />
-    <link rel="stylesheet" href="./styles.css?v=20260812-tickets-apple" />
+    <link rel="stylesheet" href="./styles.css?v=20260812-site-apple-system" />
   </head>
   <body data-page="schedule">
     <div class="app-shell">
@@ -24,17 +24,24 @@
         </div>
       </aside>
       <main class="main">
-        <header class="topbar filters-bar">
+        <header class="topbar">
           <button class="hamburger" type="button" aria-label="Toggle menu">☰</button>
+          <label class="search"><span>Search</span><input type="search" placeholder="Search maintenance schedule" disabled /></label>
+          <div class="topbar-actions"><span class="user-dot">U</span><span class="shop-user">Shop User</span></div>
+        </header>
+        <div class="page-heading">
+          <div>
+            <h1>PM Schedule</h1>
+            <p>View and manage upcoming preventative maintenance</p>
+          </div>
+        </div>
+        <section class="panel filter-panel" aria-label="Schedule filters">
           <select id="scheduleMachineFilter" data-schedule-filter="machineId" aria-label="Filter machine"><option value="all">All Machines</option></select>
           <select id="scheduleTechnicianFilter" data-schedule-filter="technician" aria-label="Filter technician"><option value="all">All Technicians</option></select>
           <select id="scheduleStatusFilter" data-schedule-filter="status" aria-label="Filter status"><option value="all">All Statuses</option></select>
           <select id="schedulePriorityFilter" data-schedule-filter="priority" aria-label="Filter priority"><option value="all">All Priorities</option></select>
           <span class="control-pill" id="scheduleRangeLabel">This week</span>
-        </header>
-        <div class="page-heading">
-          <h1>PM Schedule</h1>
-        </div>
+        </section>
         <div class="modal-backdrop" id="workOrderFormPanel" hidden>
           <section class="panel work-order-form-panel modal-card" role="dialog" aria-modal="true" aria-labelledby="workOrderFormTitle">
             <div class="panel-title">
@@ -78,6 +85,6 @@
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260812-tickets-apple"></script>
+    <script type="module" src="./app.js?v=20260812-site-apple-system"></script>
   </body>
 </html>
