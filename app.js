@@ -715,7 +715,7 @@ function renderRailOrder(order) {
   return `
     <div class="rail-card alert-card">
       <span class="rail-icon status-urgent">⌘</span>
-      <div>
+      <div class="rail-content">
         <div class="rail-line"><strong>${escapeHtml(order.machine)}</strong><span class="alert-time">Since 7:15 AM</span></div>
         <p>${escapeHtml(order.issue)}</p>
         <span class="subtle">${order.id} · Priority: ${escapeHtml(order.priority)}</span>
@@ -727,26 +727,28 @@ function renderRailOrder(order) {
 function renderPmRail(pm) {
   const calculated = pmWithLogDueDates().find((item) => item.id === pm.id) || pm;
   return `
-    <div class="rail-card">
+    <div class="rail-card rail-card-schedule">
       <div class="mini-machine">${machineIcons[pm.machineId] || "PM"}</div>
-      <div>
-        <div class="rail-line"><strong>${escapeHtml(pm.machine)}</strong><span class="pm-time">${formatDueInDays(calculated.dueInDays)}</span></div>
+      <div class="rail-content">
+        <strong>${escapeHtml(pm.machine)}</strong>
         <p>${escapeHtml(pm.task)}</p>
         <span class="subtle">${pm.id} - Last completed: ${calculated.lastCompleted ? formatDate(calculated.lastCompleted) : "No matching log"}</span>
       </div>
+      <span class="pm-time">${formatDueInDays(calculated.dueInDays)}</span>
     </div>
   `;
 }
 
 function renderScheduleRail(event) {
   return `
-    <div class="rail-card">
+    <div class="rail-card rail-card-schedule">
       <div class="mini-machine">${event.type}</div>
-      <div>
-        <div class="rail-line"><strong>${escapeHtml(event.machine)}</strong><span class="pm-time">${formatDate(event.date).replace(", 2026", "")}</span></div>
+      <div class="rail-content">
+        <strong>${escapeHtml(event.machine)}</strong>
         <p>${escapeHtml(event.title)}</p>
         <span class="subtle">${escapeHtml(event.type)} - ${escapeHtml(event.technician)}</span>
       </div>
+      <span class="pm-time">${formatDate(event.date).replace(", 2026", "")}</span>
     </div>
   `;
 }

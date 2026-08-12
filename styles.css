@@ -3043,19 +3043,33 @@ body {
 
 .panel-title {
   align-items: center;
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 16px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .panel-title h2 {
+  min-width: 0;
   color: var(--text-primary);
   font-size: 17px;
   font-weight: 650;
   letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
 .panel-title small {
+  flex-shrink: 0;
   background: var(--red);
   color: #fff;
+}
+
+.panel-title > a,
+.panel-title .text-button,
+.panel-title .segmented,
+.panel-title .tabs {
+  flex-shrink: 0;
 }
 
 .text-button,
@@ -3159,8 +3173,10 @@ label span,
 .segmented,
 .record-tabs {
   display: inline-flex;
+  align-items: center;
   gap: 0;
   width: max-content;
+  max-width: 100%;
   padding: 3px;
   border: 0;
   border-radius: var(--radius-control);
@@ -3171,12 +3187,19 @@ label span,
 .tabs button,
 .segmented button,
 .record-tabs button {
-  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 0;
+  padding: 0 14px;
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: #3a3a3c;
   font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .tabs button.active,
@@ -3362,11 +3385,19 @@ tr:hover td {
 }
 
 .rail-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
   gap: 12px;
   padding: 14px 0;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 0;
   background: transparent;
+  align-items: start;
+}
+
+.rail-card-schedule {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  column-gap: 12px;
 }
 
 .rail-card:first-child {
@@ -3381,6 +3412,51 @@ tr:hover td {
 .rail-card .machine-art.placeholder,
 .rail-card .status-dot {
   box-shadow: none;
+}
+
+.rail-card .mini-machine,
+.rail-card .rail-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.rail-content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.rail-content strong,
+.rail-line strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-content p,
+.rail-content .subtle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rail-line {
+  min-width: 0;
+}
+
+.alert-time,
+.pm-time {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.rail-card-schedule .pm-time {
+  align-self: start;
+  justify-self: end;
 }
 
 .timeline-item,
@@ -3748,5 +3824,115 @@ tr:hover td {
 
   .page-actions > * {
     flex: 1;
+  }
+}
+
+/* Final layout hardening: prevent crowded controls and dynamic text from overlapping. */
+body[data-page="workorders"] .tabs,
+body[data-page="schedule"] .segmented,
+.tabs,
+.segmented,
+.record-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px;
+  overflow: visible;
+}
+
+body[data-page="workorders"] .tabs button,
+body[data-page="schedule"] .segmented button,
+.tabs button,
+.segmented button,
+.record-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  min-width: max-content;
+  padding: 0 14px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+body[data-page="workorders"] .tabs button.active,
+body[data-page="schedule"] .segmented button.active,
+.tabs button.active,
+.segmented button.active,
+.record-tabs button.active {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.panel-title > div {
+  min-width: 0;
+}
+
+.panel-title .text-button,
+.table-actions button,
+.ticket-actions button,
+.ticket-action-menu,
+.priority-chip,
+.status-chip,
+.status-label {
+  flex-shrink: 0;
+}
+
+.rail-card {
+  min-width: 0;
+}
+
+.rail-card > * {
+  min-width: 0;
+}
+
+.rail-card-schedule .mini-machine {
+  justify-self: start;
+}
+
+.calendar-event {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.calendar-event strong,
+.calendar-event span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.machine-card h3,
+.machine-card-title,
+.detail-summary,
+.detail-facts,
+td,
+th {
+  min-width: 0;
+}
+
+.machine-card h3,
+.table-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .panel-title {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .panel-title .text-button {
+    margin-left: auto;
+  }
+
+  .record-tabs,
+  .tabs,
+  .segmented {
+    overflow-x: auto;
+    max-width: 100%;
   }
 }
