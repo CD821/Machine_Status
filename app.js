@@ -291,7 +291,7 @@ function bindSharedEvents() {
     if (closeButton) {
       closeWorkOrder(closeButton.dataset.closeOrder);
     }
-    const emptyCreateButton = event.target.closest("#emptyCreateWorkOrder");
+    const emptyCreateButton = event.target.closest("#emptyCreateWorkOrder, #emptyCreateWorkOrderMobile");
     if (emptyCreateButton) {
       openWorkOrderForm();
     }
@@ -1160,6 +1160,9 @@ function renderWorkOrders() {
     $("#workOrdersTable").innerHTML = state.page === "workorders"
       ? emptyTicketsTable()
       : emptyTable(["Priority", "Ticket", "Machine", "Issue", "Assign Technician", "Parts Needed", "Status", "Actions"], "No tickets yet.");
+    if ($("#mobileTicketsList")) {
+      $("#mobileTicketsList").innerHTML = mobileTicketsEmpty();
+    }
     return;
   }
   $("#workOrdersTable").innerHTML = table(
@@ -1175,6 +1178,50 @@ function renderWorkOrders() {
       renderWorkOrderActions(order),
     ]),
   );
+  if ($("#mobileTicketsList")) {
+    $("#mobileTicketsList").innerHTML = orders.map(renderMobileTicketCard).join("");
+  }
+}
+
+function renderMobileTicketCard(order) {
+  return `
+    <article class="mobile-ticket-card">
+      <div class="mobile-ticket-topline">
+        <span class="priority-chip priority-${order.priority}">${order.priority}</span>
+        <span class="status-chip status-${order.status}">${statusLabels[order.status] || order.status}</span>
+      </div>
+      <div class="mobile-ticket-main">
+        <a class="mobile-ticket-title" href="./machines.html?machine=${encodeURIComponent(order.machineId)}">${escapeHtml(order.id)}</a>
+        <details class="ticket-action-menu mobile-ticket-menu">
+          <summary aria-label="More actions for ${escapeHtml(order.id)}">â€¢â€¢â€¢</summary>
+          <div class="ticket-menu-popover">
+            <button data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit Ticket</button>
+            ${order.status === "completed"
+              ? `<span class="ticket-closed">Closed ${formatDate(order.completedAt)}</span>`
+              : `<button data-close-order="${escapeHtml(order.id)}" data-permission="closeWorkOrders" type="button">Close Ticket</button>`}
+            <hr />
+            <button class="danger-menu-item" data-delete-order="${escapeHtml(order.id)}" data-permission="deleteWorkOrders" type="button">Delete Ticket</button>
+          </div>
+        </details>
+      </div>
+      <p class="mobile-ticket-date">${formatDate(order.opened)}</p>
+      <dl class="mobile-ticket-meta">
+        <div><dt>Machine</dt><dd>${escapeHtml(order.machine)}</dd></div>
+        <div><dt>Issue</dt><dd>${escapeHtml(order.issue)}</dd></div>
+        <div><dt>Technician</dt><dd>${escapeHtml(order.technician)}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function mobileTicketsEmpty() {
+  return `
+    <div class="tickets-empty mobile-tickets-empty">
+      <strong>No tickets found</strong>
+      <p>There aren't any tickets in this category yet.</p>
+      <button class="primary-action" id="emptyCreateWorkOrderMobile" data-permission="manageWorkOrders" type="button">+ New Ticket</button>
+    </div>
+  `;
 }
 
 function emptyTicketsTable() {

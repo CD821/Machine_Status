@@ -3952,3 +3952,190 @@ th {
     max-width: 100%;
   }
 }
+
+/* Tickets mobile presentation: same data, native list layout. */
+.mobile-ticket-list {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  body[data-page="workorders"] .main {
+    width: 100%;
+    max-width: none;
+    padding: 0 16px 32px;
+  }
+
+  body[data-page="workorders"] .topbar {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 116px;
+    margin: 0 -16px;
+    padding: 10px 16px 12px;
+  }
+
+  body[data-page="workorders"] .hamburger {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  body[data-page="workorders"] .topbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  body[data-page="workorders"] .shop-user {
+    display: none;
+  }
+
+  body[data-page="workorders"] .search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+
+  body[data-page="workorders"] .search input {
+    width: 100%;
+  }
+
+  body[data-page="workorders"] .page-heading {
+    display: grid;
+    align-items: start;
+    gap: 14px;
+    margin: 24px 0 20px;
+  }
+
+  body[data-page="workorders"] .page-heading h1 {
+    font-size: 30px;
+  }
+
+  body[data-page="workorders"] #createWorkOrder {
+    justify-self: start;
+    min-height: 40px;
+  }
+
+  body[data-page="workorders"] .tickets-panel {
+    width: 100%;
+    max-width: none;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  body[data-page="workorders"] .tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  body[data-page="workorders"] .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="workorders"] .tabs button {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0 14px;
+  }
+
+  body[data-page="workorders"] .table-wrap {
+    display: none;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-card {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  body[data-page="workorders"] .mobile-ticket-topline,
+  body[data-page="workorders"] .mobile-ticket-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-main {
+    align-items: flex-start;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-date {
+    margin: -4px 0 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-meta {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-meta div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-meta dt {
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-meta dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-menu {
+    flex-shrink: 0;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-menu summary {
+    width: 34px;
+    height: 32px;
+  }
+
+  body[data-page="workorders"] .mobile-ticket-menu .ticket-menu-popover {
+    right: 0;
+  }
+
+  body[data-page="workorders"] .mobile-tickets-empty {
+    padding: 28px 12px;
+  }
+}

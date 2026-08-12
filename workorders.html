@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tickets | TTS Maintenance</title>
     <meta name="description" content="Equipment repair ticket queue." />
-    <link rel="stylesheet" href="./styles.css?v=20260812-pm-ticket-icon" />
+    <link rel="stylesheet" href="./styles.css?v=20260812-mobile-ticket-cards" />
   </head>
   <body data-page="workorders">
     <div class="app-shell">
@@ -71,10 +71,11 @@
             <button data-order-filter="completed" type="button">Completed</button>
           </div>
           <div class="table-wrap"><table id="workOrdersTable"></table></div>
+          <div class="mobile-ticket-list" id="mobileTicketsList" aria-label="Tickets list"></div>
         </section>
       </main>
     </div>
     <script src="./config.js"></script>
-    <script type="module" src="./app.js?v=20260812-pm-ticket-icon"></script>
+    <script type="module" src="./app.js?v=20260812-mobile-ticket-cards"></script>
   </body>
 </html>
