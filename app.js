@@ -137,6 +137,7 @@ async function init() {
   state.pmSchedule = state.remoteEnabled ? state.data.pmSchedule : JSON.parse(localStorage.getItem("tts-pm-schedule") || "null") || state.data.pmSchedule;
   if (!Array.isArray(state.pmSchedule)) state.pmSchedule = [];
   if (!Array.isArray(state.data.workOrders)) state.data.workOrders = [];
+  state.data.workOrders = state.data.workOrders.map(normalizeWorkOrderDates);
   state.data.pmSchedule = state.pmSchedule;
   applyMachineOverrides();
   applyWorkOrderOverrides();
@@ -2307,6 +2308,21 @@ function activeWorkOrders() {
 
 function visibleWorkOrders() {
   return state.data.workOrders.filter((order) => order.status !== "deleted");
+}
+
+function normalizeWorkOrderDates(order) {
+  return {
+    ...order,
+    opened: normalizeDateValue(order.opened || order.scheduledDate),
+    scheduledDate: normalizeDateValue(order.scheduledDate || order.opened),
+    completedAt: normalizeDateValue(order.completedAt),
+  };
+}
+
+function normalizeDateValue(value) {
+  if (!value) return "";
+  const date = parseLocalDate(value);
+  return date ? localDateValue(date) : String(value).slice(0, 10);
 }
 
 function updateMachineStatus(machineId, status, latestNote, lastUpdated) {

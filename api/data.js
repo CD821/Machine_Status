@@ -75,11 +75,21 @@ function workOrderFromDb(row, machineMap) {
     priority: row.priority,
     status: row.status,
     technician: row.assigned_to || "",
-    opened: String(row.opened_at || "").slice(0, 10),
-    scheduledDate: String(row.scheduled_date || row.opened_at || "").slice(0, 10),
-    completedAt: row.completed_at ? String(row.completed_at).slice(0, 10) : "",
+    opened: dateOnly(row.opened_at),
+    scheduledDate: dateOnly(row.scheduled_date || row.opened_at),
+    completedAt: dateOnly(row.completed_at),
     partsNeeded: row.parts_needed || [],
   };
+}
+
+function dateOnly(value) {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return `${iso[1]}-${String(iso[2]).padStart(2, "0")}-${String(iso[3]).padStart(2, "0")}`;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? raw.slice(0, 10) : parsed.toISOString().slice(0, 10);
 }
 
 function pmFromDb(row, machineMap) {
