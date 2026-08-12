@@ -1295,6 +1295,10 @@ async function handleLogSubmit(event) {
   const formElement = event.currentTarget;
   const form = new FormData(formElement);
   const machine = state.data.machines.find((item) => item.id === form.get("machineId"));
+  if (!machine) {
+    showPageToast("Choose a machine before saving the log.", "error");
+    return;
+  }
   const action = event.submitter?.value || "log";
   const downAt = String(form.get("downAt") || "");
   const upAt = String(form.get("upAt") || "");
@@ -1317,20 +1321,54 @@ async function handleLogSubmit(event) {
     note: `${form.get("issueType")}: ${form.get("notes") || "No notes entered."} ${timingNote} Technician: ${form.get("technician")}.`,
     source: state.remoteEnabled ? "App" : "Local draft",
   };
-  state.localLogs.push(log);
-  localStorage.setItem("tts-maintenance-local-logs", JSON.stringify(state.localLogs));
-  updateMachineStatus(machine.id, status, log.note, eventDate);
-  await saveRemoteLog(log, machine);
-  state.selectedMachineId = machine.id;
   const savedMessage = action === "log" ? "Maintenance note recorded." : `Machine marked ${statusLabels[status] || status}. Log recorded.`;
-  setText("#saveState", state.remoteEnabled ? "Saved" : "Saved locally");
+
+  setText("#saveState", "Saving...");
+  try {
+    if (state.remoteEnabled) {
+      const remoteMachine = {
+        ...machine,
+        currentStatus: status,
+        latestNote: log.note,
+        lastUpdated: eventDate,
+      };
+      await saveRemoteLog(log, remoteMachine);
+      Object.assign(machine, {
+        currentStatus: status,
+        latestNote: log.note,
+        lastUpdated: eventDate,
+      });
+      state.data.updates.push(log);
+      setText("#saveState", "Saved");
+    } else {
+      state.localLogs.push(log);
+      localStorage.setItem("tts-maintenance-local-logs", JSON.stringify(state.localLogs));
+      updateMachineStatus(machine.id, status, log.note, eventDate, { persistLocal: true });
+      setText("#saveState", "Saved locally");
+    }
+  } catch (error) {
+    console.error("Failed to save maintenance log", error);
+    setText("#saveState", "Save failed");
+    showPageToast("Could not save to the server. This log was not shared. Check the user's role or connection.", "error");
+    return;
+  }
+
+  state.selectedMachineId = machine.id;
   formElement.reset();
   closeLogForm();
   showPageToast(savedMessage, "success");
   hydrateFormOptions();
-  renderMachineDetail();
-  renderMachineIssues();
-  renderMachinePm();
+  if (state.page === "dashboard") {
+    renderSummary();
+    renderMachineGrid();
+    renderRightRail();
+  }
+  if (state.page === "machines") {
+    renderMachineDetail();
+    renderMachineIssues();
+    renderMachinePm();
+  }
+  if (state.page === "logs") renderLogs();
 }
 
 function showPageToast(message, tone = "success") {
@@ -2325,12 +2363,13 @@ function normalizeDateValue(value) {
   return date ? localDateValue(date) : String(value).slice(0, 10);
 }
 
-function updateMachineStatus(machineId, status, latestNote, lastUpdated) {
+function updateMachineStatus(machineId, status, latestNote, lastUpdated, options = {}) {
   const machine = state.data.machines.find((item) => item.id === machineId);
   if (!machine) return;
   machine.currentStatus = status;
   machine.latestNote = latestNote;
   machine.lastUpdated = lastUpdated;
+  if (!options.persistLocal) return;
   state.machineOverrides[machineId] = {
     currentStatus: status,
     latestNote,
@@ -2341,8 +2380,8 @@ function updateMachineStatus(machineId, status, latestNote, lastUpdated) {
 
 async function saveRemoteLog(log, machine) {
   if (!state.remoteEnabled) return;
-  await remoteStore.saveMachine(machine);
   await remoteStore.saveLog(log);
+  await remoteStore.saveMachine(machine);
 }
 
 function statusFromEvent(action, selectedStatus) {
