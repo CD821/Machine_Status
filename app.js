@@ -2674,8 +2674,25 @@ function clampNumber(value, min, max, fallback) {
 
 function formatDate(value) {
   if (!value) return "Not set";
-  const date = new Date(`${value}T12:00:00`);
+  const date = parseLocalDate(value);
+  if (!date) return "Not set";
   return date.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
+
+function parseLocalDate(value) {
+  const raw = String(value || "").trim();
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, year, month, day] = iso.map(Number);
+    return new Date(year, month - 1, day, 12);
+  }
+  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (slash) {
+    const [, month, day, year] = slash.map(Number);
+    return new Date(year, month - 1, day, 12);
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function formatDateTime(value) {
