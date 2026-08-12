@@ -1193,7 +1193,7 @@ function renderMobileTicketCard(order) {
       <div class="mobile-ticket-main">
         <a class="mobile-ticket-title" href="./machines.html?machine=${encodeURIComponent(order.machineId)}">${escapeHtml(order.id)}</a>
         <details class="ticket-action-menu mobile-ticket-menu">
-          <summary aria-label="More actions for ${escapeHtml(order.id)}">â€¢â€¢â€¢</summary>
+          <summary aria-label="More actions for ${escapeHtml(order.id)}">...</summary>
           <div class="ticket-menu-popover">
             <button data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit Ticket</button>
             ${order.status === "completed"
@@ -1266,7 +1266,7 @@ function renderWorkOrderActions(order) {
     <div class="row-actions ticket-actions">
       <button class="ticket-edit-action" data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit</button>
       <details class="ticket-action-menu">
-        <summary aria-label="More actions for ${escapeHtml(order.id)}">•••</summary>
+        <summary aria-label="More actions for ${escapeHtml(order.id)}">...</summary>
         <div class="ticket-menu-popover">
           <button data-edit-order="${escapeHtml(order.id)}" data-permission="manageWorkOrders" type="button">Edit Ticket</button>
           ${closeAction}

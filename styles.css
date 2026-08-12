@@ -3959,9 +3959,23 @@ th {
 }
 
 @media (max-width: 767px) {
-  body[data-page="workorders"] .main {
+  html,
+  body[data-page="workorders"] {
     width: 100%;
+    overflow-x: hidden;
+  }
+
+  body[data-page="workorders"] .app-shell {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="workorders"] .main {
+    display: block;
+    width: 100vw;
     max-width: none;
+    min-width: 0;
     padding: 0 16px 32px;
   }
 
@@ -3970,6 +3984,7 @@ th {
     grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
+    width: 100vw;
     min-height: 116px;
     margin: 0 -16px;
     padding: 10px 16px 12px;
@@ -4018,7 +4033,7 @@ th {
   }
 
   body[data-page="workorders"] .tickets-panel {
-    width: 100%;
+    width: calc(100vw - 32px);
     max-width: none;
     padding: 14px;
     overflow: hidden;
@@ -4056,6 +4071,7 @@ th {
     display: grid;
     gap: 8px;
     width: 100%;
+    max-width: none;
     min-width: 0;
     padding: 14px;
     border: 1px solid rgba(0, 0, 0, 0.07);
@@ -4129,6 +4145,10 @@ th {
   body[data-page="workorders"] .mobile-ticket-menu summary {
     width: 34px;
     height: 32px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1;
   }
 
   body[data-page="workorders"] .mobile-ticket-menu .ticket-menu-popover {
