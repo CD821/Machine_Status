@@ -3416,9 +3416,25 @@ tr:hover td {
 
 .rail-card .mini-machine,
 .rail-card .rail-icon {
+  display: inline-grid;
+  place-items: center;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rail-card .ticket-badge-icon {
+  border: 1px solid rgba(0, 122, 255, 0.18);
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--blue);
 }
 
 .rail-content {

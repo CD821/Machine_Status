@@ -740,9 +740,11 @@ function renderPmRail(pm) {
 }
 
 function renderScheduleRail(event) {
+  const iconLabel = event.type === "Ticket" ? "WO" : "PM";
+  const iconClass = event.type === "Ticket" ? " ticket-badge-icon" : "";
   return `
     <div class="rail-card rail-card-schedule">
-      <div class="mini-machine">${event.type}</div>
+      <div class="mini-machine${iconClass}" title="${escapeHtml(event.type)}">${iconLabel}</div>
       <div class="rail-content">
         <strong>${escapeHtml(event.machine)}</strong>
         <p>${escapeHtml(event.title)}</p>
