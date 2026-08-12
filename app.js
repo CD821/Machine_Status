@@ -2686,9 +2686,12 @@ function parseLocalDate(value) {
     const [, year, month, day] = iso.map(Number);
     return new Date(year, month - 1, day, 12);
   }
-  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const slash = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4}|\d{2})/);
   if (slash) {
-    const [, month, day, year] = slash.map(Number);
+    const month = Number(slash[1]);
+    const day = Number(slash[2]);
+    const rawYear = Number(slash[3]);
+    const year = rawYear < 100 ? 2000 + rawYear : rawYear;
     return new Date(year, month - 1, day, 12);
   }
   const parsed = new Date(raw);
