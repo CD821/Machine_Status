@@ -38,7 +38,7 @@ function machineFromDb(row) {
     model: row.model || "",
     serialNumber: row.serial_number || "",
     currentStatus: row.current_status || "unknown",
-    lastUpdated: String(row.last_updated || row.created_at || "").slice(0, 10),
+    lastUpdated: dateOnly(row.last_updated || row.created_at),
     latestNote: row.latest_note || "",
     runtimeTodayHours: Number(row.runtime_today_hours || 0),
     utilization: Number(row.utilization || 0),
@@ -51,14 +51,16 @@ function machineFromDb(row) {
 function logFromDb(row, machineMap) {
   const machine = machineMap.get(row.machine_id);
   const dateSource = row.down_at || row.up_at || row.logged_at;
+  const downAt = dateTimeValue(row.down_at);
+  const upAt = dateTimeValue(row.up_at);
   return {
     id: row.id,
     machineId: row.machine_id,
     machine: machine?.name || "Machine",
-    date: String(dateSource || "").slice(0, 10),
+    date: dateOnly(dateSource),
     status: row.status,
-    downAt: row.down_at ? String(row.down_at).slice(0, 16) : "",
-    upAt: row.up_at ? String(row.up_at).slice(0, 16) : "",
+    downAt,
+    upAt,
     durationMinutes: row.duration_minutes,
     note: row.notes || "",
     source: row.source || "Neon",
@@ -84,12 +86,40 @@ function workOrderFromDb(row, machineMap) {
 
 function dateOnly(value) {
   if (!value) return "";
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) return shopDateParts(value).date;
   const raw = String(value).trim();
   const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (iso) return `${iso[1]}-${String(iso[2]).padStart(2, "0")}-${String(iso[3]).padStart(2, "0")}`;
+  if (iso && !/[zZ]|[+-]\d{2}:?\d{2}\s*$/.test(raw)) return `${iso[1]}-${String(iso[2]).padStart(2, "0")}-${String(iso[3]).padStart(2, "0")}`;
   const parsed = new Date(raw);
-  return Number.isNaN(parsed.getTime()) ? raw.slice(0, 10) : parsed.toISOString().slice(0, 10);
+  return Number.isNaN(parsed.getTime()) ? raw.slice(0, 10) : shopDateParts(parsed).date;
+}
+
+function dateTimeValue(value) {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString();
+  const raw = String(value).trim();
+  if (/[zZ]|[+-]\d{2}:?\d{2}\s*$/.test(raw)) {
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+  }
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T\s](\d{1,2}):(\d{2})/);
+  if (iso) {
+    const [, year, month, day, hour, minute] = iso;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${minute}`;
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+}
+
+function shopDateParts(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return { date: `${values.year}-${values.month}-${values.day}` };
 }
 
 function pmFromDb(row, machineMap) {
@@ -104,6 +134,6 @@ function pmFromDb(row, machineMap) {
     dueInHours: row.due_in_hours || 0,
     technician: row.assigned_to || "",
     status: row.status || "scheduled",
-    lastCompleted: row.last_completed_at ? String(row.last_completed_at).slice(0, 10) : "",
+    lastCompleted: dateOnly(row.last_completed_at),
   };
 }
