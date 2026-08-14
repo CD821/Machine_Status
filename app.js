@@ -1307,6 +1307,9 @@ async function handleLogSubmit(event) {
   const eventDate = eventDateTime ? eventDateTime.slice(0, 10) : new Date().toISOString().slice(0, 10);
   const durationMinutes = calculateDurationMinutes(downAt, upAt);
   const timingNote = buildTimingNote(action, downAt, upAt, durationMinutes);
+  const issueType = String(form.get("issueType") || "");
+  const technician = String(form.get("technician") || "");
+  const notes = String(form.get("notes") || "No notes entered.");
   const log = {
     id: `local-${Date.now()}`,
     machineId: machine.id,
@@ -1316,34 +1319,40 @@ async function handleLogSubmit(event) {
     downAt,
     upAt,
     durationMinutes,
-    issueType: String(form.get("issueType") || ""),
-    technician: String(form.get("technician") || ""),
-    note: `${form.get("issueType")}: ${form.get("notes") || "No notes entered."} ${timingNote} Technician: ${form.get("technician")}.`,
+    issueType,
+    technician,
+    note: `${issueType}: ${notes} ${timingNote} Technician: ${technician}.`,
     source: state.remoteEnabled ? "App" : "Local draft",
   };
+  const logsToSave = action === "operational" && downAt && upAt
+    ? splitClosedDowntimeLog(log, durationMinutes)
+    : [log];
+  const finalLog = logsToSave[logsToSave.length - 1];
   const savedMessage = action === "log" ? "Maintenance note recorded." : `Machine marked ${statusLabels[status] || status}. Log recorded.`;
 
   setText("#saveState", "Saving...");
   try {
     if (state.remoteEnabled) {
-      const remoteMachine = {
-        ...machine,
-        currentStatus: status,
-        latestNote: log.note,
-        lastUpdated: eventDate,
-      };
-      await saveRemoteLog(log, remoteMachine);
+      for (const entry of logsToSave) {
+        const remoteMachine = {
+          ...machine,
+          currentStatus: entry.status,
+          latestNote: entry.note,
+          lastUpdated: entry.date,
+        };
+        await saveRemoteLog(entry, remoteMachine);
+      }
       Object.assign(machine, {
-        currentStatus: status,
-        latestNote: log.note,
-        lastUpdated: eventDate,
+        currentStatus: finalLog.status,
+        latestNote: finalLog.note,
+        lastUpdated: finalLog.date,
       });
-      state.data.updates.push(log);
+      state.data.updates.push(...logsToSave);
       setText("#saveState", "Saved");
     } else {
-      state.localLogs.push(log);
+      state.localLogs.push(...logsToSave);
       localStorage.setItem("tts-maintenance-local-logs", JSON.stringify(state.localLogs));
-      updateMachineStatus(machine.id, status, log.note, eventDate, { persistLocal: true });
+      updateMachineStatus(machine.id, finalLog.status, finalLog.note, finalLog.date, { persistLocal: true });
       setText("#saveState", "Saved locally");
     }
   } catch (error) {
@@ -1369,6 +1378,37 @@ async function handleLogSubmit(event) {
     renderMachinePm();
   }
   if (state.page === "logs") renderLogs();
+}
+
+function splitClosedDowntimeLog(log, durationMinutes) {
+  const baseId = Date.now();
+  const downLog = {
+    ...log,
+    id: `local-${baseId}-down`,
+    date: log.downAt.slice(0, 10),
+    status: "down",
+    upAt: "",
+    durationMinutes: null,
+    note: `${log.issueType}: ${extractBaseLogNote(log.note)} Machine marked down. Down time: ${formatDateTime(log.downAt)}. Technician: ${log.technician}.`,
+  };
+  const upLog = {
+    ...log,
+    id: `local-${baseId}-up`,
+    date: log.upAt.slice(0, 10),
+    status: "operational",
+    downAt: "",
+    durationMinutes: null,
+    note: `${log.issueType}: ${extractBaseLogNote(log.note)} Machine marked operational. Up time: ${formatDateTime(log.upAt)}.${durationMinutes !== null ? ` Calculated downtime: ${formatDuration(durationMinutes)}.` : ""} Technician: ${log.technician}.`,
+  };
+  return [downLog, upLog];
+}
+
+function extractBaseLogNote(note) {
+  return String(note || "")
+    .replace(/\s*(?:Down time|Up time|Calculated downtime):.*$/i, "")
+    .replace(/\s*Technician:.*$/i, "")
+    .trim()
+    .replace(/^[^:]*:\s*/, "") || "No notes entered.";
 }
 
 function showPageToast(message, tone = "success") {
